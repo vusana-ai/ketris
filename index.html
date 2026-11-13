@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ksoft 테트리스</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; }
+    .board-cell { width: 28px; height: 28px; border: 1px solid rgba(255, 255, 255, 0.08); }
+    .preview-cell { width: 22px; height: 22px; border: 1px solid rgba(255, 255, 255, 0.05); }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4">
+
+  <!-- Header -->
+  <div class="mb-4 text-center">
+    <h1 class="text-2xl font-black tracking-tight text-amber-400">Ksoft 테트리스</h1>
+    <p class="text-xs text-slate-400 mt-0.5">클래식 클래스 및 모바일 지원</p>
+  </div>
+
+  <!-- Main Game Layout -->
+  <div class="flex flex-col sm:flex-row gap-6 bg-slate-900/90 border border-slate-800 p-6 rounded-2xl shadow-2xl items-center">
+    
+    <!-- Game Board -->
+    <div class="relative bg-slate-950 border-2 border-slate-700 rounded-xl overflow-hidden shadow-inner">
+      <div id="board" class="grid grid-cols-10 grid-rows-20"></div>
+      
+      <!-- Start / Game Over Overlay -->
+      <div id="overlay" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3 p-4 text-center z-10">
+        <h2 id="overlayTitle" class="text-xl font-black text-amber-300">테트리스</h2>
+        <p id="overlayDesc" class="text-xs text-slate-300">방향키로 조작하세요!</p>
+        <button id="startBtn" class="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm shadow-lg shadow-amber-500/30 transition cursor-pointer">
+          게임 시작
+        </button>
+      </div>
+    </div>
+
+    <!-- Side Panel (Score, Next, Controls) -->
+    <div class="flex flex-col justify-between w-48 gap-4">
+      <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 flex flex-col gap-3">
+        <div>
+          <span class="text-[11px] font-bold text-slate-400">점수 (SCORE)</span>
+          <div id="scoreVal" class="text-xl font-black text-amber-400">0</div>
+        </div>
+        <div>
+          <span class="text-[11px] font-bold text-slate-400">지운 줄 (LINES)</span>
+          <div id="linesVal" class="text-xl font-black text-emerald-400">0</div>
+        </div>
+        <div>
+          <span class="text-[11px] font-bold text-slate-400">다음 블록 (NEXT)</span>
+          <div class="mt-1 bg-slate-900 border border-slate-800 rounded-lg p-2 flex justify-center">
+            <div id="nextBoard" class="grid grid-cols-4 grid-rows-4"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Desktop Controls Guide -->
+      <div class="hidden sm:block text-[11px] text-slate-400 bg-slate-950/50 border border-slate-800 rounded-xl p-3">
+        <div class="font-bold text-slate-300 mb-1">⌨️ 조작법</div>
+        <div>← → : 이동</div>
+        <div>↑ : 회전</div>
+        <div>↓ : 소프트 드롭</div>
+        <div>SPACE : 하드 드롭</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Touch Controls -->
+  <div class="flex sm:hidden gap-2 mt-4 w-full max-w-xs">
+    <button id="btnLeft" class="flex-1 py-3 bg-slate-800 active:bg-slate-700 rounded-xl font-bold text-lg">◀</button>
+    <button id="btnRotate" class="flex-1 py-3 bg-slate-800 active:bg-slate-700 rounded-xl font-bold text-lg">🔄</button>
+    <button id="btnRight" class="flex-1 py-3 bg-slate-800 active:bg-slate-700 rounded-xl font-bold text-lg">▶</button>
+    <button id="btnDrop" class="flex-1 py-3 bg-amber-600 active:bg-amber-500 rounded-xl font-bold text-lg">⬇</button>
+  </div>
+
+  <script>
+    const ROWS = 20;
+    const COLS = 10;
+    const boardEl = document.getElementById('board');
+    const nextBoardEl = document.getElementById('nextBoard');
+    const scoreValEl = document.getElementById('scoreVal');
+    const linesValEl = document.getElementById('linesVal');
+    const overlayEl = document.getElementById('overlay');
+    const overlayTitle = document.getElementById('overlayTitle');
+    const overlayDesc = document.getElementById('overlayDesc');
+    const startBtn = document.getElementById('startBtn');
+
+    let board = Array(ROWS).fill(null).map(() => Array(COLS).fill(0));
+    let score = 0;
+    let lines = 0;
+    let gameOver = false;
+    let gameInterval = null;
+    let dropInterval = 500;
+
+    const SHAPES = [
+      { shape: [[1,1,1,1]], color: 'bg-cyan-400 shadow-cyan-500/50' }, // I
+      { shape: [[2,0,0],[2,2,2]], color: 'bg-blue-500 shadow-blue-500/50' }, // J
+      { shape: [[0,0,3],[3,3,3]], color: 'bg-orange-500 shadow-orange-500/50' }, // L
+      { shape: [[4,4],[4,4]], color: 'bg-yellow-400 shadow-yellow-500/50' }, // O
+      { shape: [[0,5,5],[5,5,0]], color: 'bg-emerald-500 shadow-emerald-500/50' }, // S
+      { shape: [[0,6,0],[6,6,6]], color: 'bg-purple-500 shadow-purple-500/50' }, // T
+      { shape: [[7,7,0],[0,7,7]], color: 'bg-rose-500 shadow-rose-500/50' } // Z
+    ];
+
+    let currentPiece = null;
+    let nextPiece = null;
+
+    // Initialize DOM Grids
+    function initGrids() {
+      boardEl.innerHTML = '';
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const cell = document.createElement('div');
+          cell.className = 'board-cell bg-slate-900/60';
+          cell.id = `cell-${r}-${c}`;
+          boardEl.appendChild(cell);
+        }
+      }
+
+      nextBoardEl.innerHTML = '';
+      for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+          const cell = document.createElement('div');
+          cell.className = 'preview-cell bg-slate-900/60 rounded-sm';
+          cell.id = `next-${r}-${c}`;
+          nextBoardEl.appendChild(cell);
+        }
+      }
+    }
+
+    function getRandomPiece() {
+      const rand = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+      return {
+        shape: rand.shape,
+        color: rand.color,
+        row: 0,
+        col: Math.floor(COLS / 2) - Math.floor(rand.shape[0].length / 2)
+      };
+    }
+
+    function startGame() {
+      board = Array(ROWS).fill(null).map(() => Array(COLS).fill(0));
+      score = 0;
+      lines = 0;
+      gameOver = false;
+      scoreValEl.textContent = score;
+      linesValEl.textContent = lines;
+      overlayEl.classList.add('hidden');
+
+      currentPiece = getRandomPiece();
+      nextPiece = getRandomPiece();
+
+      if (gameInterval) clearInterval(gameInterval);
+      gameInterval = setInterval(gameLoop, dropInterval);
+      render();
+    }
+
+    function gameLoop() {
+      moveDown();
+    }
+
+    function moveDown() {
+      currentPiece.row++;
+      if (checkCollision()) {
+        currentPiece.row--;
+        mergePiece();
+        clearLines();
+        currentPiece = nextPiece;
+        nextPiece = getRandomPiece();
+        if (checkCollision()) {
+          endGame();
+        }
+      }
+      render();
+    }
+
+    function checkCollision() {
+      for (let r = 0; r < currentPiece.shape.length; r++) {
+        for (let c = 0; c < currentPiece.shape[r].length; c++) {
+          if (currentPiece.shape[r][c]) {
+            let tr = currentPiece.row + r;
+            let tc = currentPiece.col + c;
+            if (tc < 0 || tc >= COLS || tr >= ROWS) return true;
+            if (tr >= 0 && board[tr][tc]) return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    function mergePiece() {
+      for (let r = 0; r < currentPiece.shape.length; r++) {
+        for (let c = 0; c < currentPiece.shape[r].length; c++) {
+          if (currentPiece.shape[r][c]) {
+            let tr = currentPiece.row + r;
+            let tc = currentPiece.col + c;
+            if (tr >= 0) board[tr][tc] = currentPiece.color;
+          }
+        }
+      }
+    }
+
+    function clearLines() {
+      let cleared = 0;
+      for (let r = ROWS - 1; r >= 0; r--) {
+        if (board[r].every(cell => cell !== 0)) {
+          board.splice(r, 1);
+          board.unshift(Array(COLS).fill(0));
+          cleared++;
+          r++; // 체크한 줄 다시 확인
+        }
+      }
+      if (cleared > 0) {
+        lines += cleared;
+        score += cleared * 100 * cleared;
+        scoreValEl.textContent = score;
+        linesValEl.textContent = lines;
+      }
+    }
+
+    function rotatePiece() {
+      const originalShape = currentPiece.shape;
+      const rows = originalShape.length;
+      const cols = originalShape[0].length;
+      let rotated = Array(cols).fill(null).map(() => Array(rows).fill(0));
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          rotated[c][rows - 1 - r] = originalShape[r][c];
+        }
+      }
+
+      currentPiece.shape = rotated;
+      if (checkCollision()) {
+        currentPiece.shape = originalShape; // 충돌 시 원복
+      }
+      render();
+    }
+
+    function hardDrop() {
+      while (!checkCollision()) {
+        currentPiece.row++;
+      }
+      currentPiece.row--;
+      mergePiece();
+      clearLines();
+      currentPiece = nextPiece;
+      nextPiece = getRandomPiece();
+      if (checkCollision()) {
+        endGame();
+      }
+      render();
+    }
+
+    function endGame() {
+      gameOver = true;
+      clearInterval(gameInterval);
+      overlayTitle.textContent = "게임 오버!";
+      overlayDesc.textContent = `최종 점수: ${score}점`;
+      startBtn.textContent = "다시 시작";
+      overlayEl.classList.remove('hidden');
+    }
+
+    function render() {
+      // Clear board cells
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const cell = document.getElementById(`cell-${r}-${c}`);
+          cell.className = 'board-cell bg-slate-900/60 rounded-xs';
+          if (board[r][c]) {
+            cell.className = `board-cell ${board[r][c]} rounded-xs shadow-md`;
+          }
+        }
+      }
+
+      // Draw current piece
+      if (currentPiece) {
+        for (let r = 0; r < currentPiece.shape.length; r++) {
+          for (let c = 0; c < currentPiece.shape[r].length; c++) {
+            if (currentPiece.shape[r][c]) {
+              let tr = currentPiece.row + r;
+              let tc = currentPiece.col + c;
+              if (tr >= 0 && tr < ROWS && tc >= 0 && tc < COLS) {
+                const cell = document.getElementById(`cell-${tr}-${tc}`);
+                cell.className = `board-cell ${currentPiece.color} rounded-xs shadow-md`;
+              }
+            }
+          }
+        }
+      }
+
+      // Draw next piece preview
+      for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+          const cell = document.getElementById(`next-${r}-${c}`);
+          cell.className = 'preview-cell bg-slate-900/60 rounded-xs';
+        }
+      }
+      if (nextPiece) {
+        const nr = nextPiece.shape.length;
+        const nc = nextPiece.shape[0].length;
+        const offsetR = Math.floor((4 - nr) / 2);
+        const offsetC = Math.floor((4 - nc) / 2);
+        for (let r = 0; r < nr; r++) {
+          for (let c = 0; c < nc; c++) {
+            if (nextPiece.shape[r][c]) {
+              const cell = document.getElementById(`next-${r + offsetR}-${c + offsetC}`);
+              if (cell) cell.className = `preview-cell ${nextPiece.color} rounded-xs shadow-md`;
+            }
+          }
+        }
+      }
+    }
+
+    // Keyboard Controls
+    document.addEventListener('keydown', (e) => {
+      if (gameOver || !currentPiece) return;
+      if (e.key === 'ArrowLeft') {
+        currentPiece.col--;
+        if (checkCollision()) currentPiece.col++;
+        render();
+      } else if (e.key === 'ArrowRight') {
+        currentPiece.col++;
+        if (checkCollision()) currentPiece.col--;
+        render();
+      } else if (e.key === 'ArrowDown') {
+        moveDown();
+      } else if (e.key === 'ArrowUp') {
+        rotatePiece();
+      } else if (e.key === ' ') {
+        hardDrop();
+      }
+    });
+
+    // Mobile Buttons
+    document.getElementById('btnLeft').addEventListener('click', () => {
+      if (gameOver || !currentPiece) return;
+      currentPiece.col--;
+      if (checkCollision()) currentPiece.col++;
+      render();
+    });
+    document.getElementById('btnRight').addEventListener('click', () => {
+      if (gameOver || !currentPiece) return;
+      currentPiece.col++;
+      if (checkCollision()) currentPiece.col--;
+      render();
+    });
+    document.getElementById('btnRotate').addEventListener('click', () => {
+      if (gameOver || !currentPiece) return;
+      rotatePiece();
+    });
+    document.getElementById('btnDrop').addEventListener('click', () => {
+      if (gameOver || !currentPiece) return;
+      hardDrop();
+    });
+
+    startBtn.addEventListener('click', startGame);
+    initGrids();
+  </script>
+</body>
+</html>
