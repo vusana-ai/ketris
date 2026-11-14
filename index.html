@@ -2,167 +2,850 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ksoft 테트리스</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="icon" type="image/png" href="./icon.png" />
+  <link rel="manifest" href="./manifest.json" />
+  <title>케트리스 — 블록 퍼즐 아케이드</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
-    body { font-family: 'Inter', sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; }
-    .board-cell { width: 28px; height: 28px; border: 1px solid rgba(255, 255, 255, 0.08); }
-    .preview-cell { width: 22px; height: 22px; border: 1px solid rgba(255, 255, 255, 0.05); }
+    body {
+      font-family: 'Inter', 'Noto Sans KR', sans-serif;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior: none;
+    }
+    :root {
+      --cell-size: clamp(20px, 2.75vh, 27px);
+      --preview-size: 13px;
+    }
+    @media (min-width: 640px) {
+      :root {
+        --cell-size: 27px;
+        --preview-size: 20px;
+      }
+    }
+    .board-cell {
+      width: var(--cell-size);
+      height: var(--cell-size);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    .preview-cell {
+      width: var(--preview-size);
+      height: var(--preview-size);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .touch-btn {
+      touch-action: manipulation;
+    }
+    @keyframes goldShine {
+      0%, 100% { filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.45)); }
+      50% { filter: drop-shadow(0 0 10px rgba(253, 224, 71, 0.85)); }
+    }
+    .gold-bar-glow {
+      animation: goldShine 2.4s infinite ease-in-out;
+    }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
 
-  <!-- Header -->
-  <div class="mb-4 text-center">
-    <h1 class="text-2xl font-black tracking-tight text-amber-400">Ksoft 테트리스</h1>
-    <p class="text-xs text-slate-400 mt-0.5">클래식 클래스 및 모바일 지원</p>
-  </div>
+  <!-- 상단 통합 계정 & 점수 저장 헤더 -->
+  <header class="border-b border-slate-800/80 bg-slate-900/95 backdrop-blur px-3 py-2 sticky top-0 z-30 shadow-lg shadow-black/25">
+    <div class="max-w-3xl mx-auto flex items-center justify-between gap-2">
+      <div class="flex items-center gap-1.5 min-w-0">
+        <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 font-black text-sm border border-amber-500/40 shrink-0">🧱</span>
+        <h1 class="text-sm sm:text-base font-black tracking-tight text-amber-400 shrink-0">케트리스</h1>
+        <span id="userBadge" class="px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold bg-slate-800 border border-slate-700 text-slate-300 truncate">
+          👤 게스트
+        </span>
+      </div>
 
-  <!-- Main Game Layout -->
-  <div class="flex flex-col sm:flex-row gap-6 bg-slate-900/90 border border-slate-800 p-6 rounded-2xl shadow-2xl items-center">
-    
-    <!-- Game Board -->
-    <div class="relative bg-slate-950 border-2 border-slate-700 rounded-xl overflow-hidden shadow-inner">
-      <div id="board" class="grid grid-cols-10 grid-rows-20"></div>
-      
-      <!-- Start / Game Over Overlay -->
-      <div id="overlay" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3 p-4 text-center z-10">
-        <h2 id="overlayTitle" class="text-xl font-black text-amber-300">테트리스</h2>
-        <p id="overlayDesc" class="text-xs text-slate-300">방향키로 조작하세요!</p>
-        <button id="startBtn" class="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm shadow-lg shadow-amber-500/30 transition cursor-pointer">
-          게임 시작
+      <div class="flex items-center gap-1.5 shrink-0">
+        <div class="px-2 py-1 rounded-lg text-[11px] font-extrabold bg-sky-500/15 border border-sky-500/40 text-sky-300">
+          최고 <span id="bestScoreHeader">0</span>
+        </div>
+
+        <!-- 골드바 서버저장/로그인 버튼 -->
+        <button id="serverSaveGoldBtn" type="button"
+          class="px-2.5 py-1 rounded-lg text-xs font-black bg-gradient-to-b from-amber-300 via-amber-400 to-amber-600 hover:from-yellow-200 hover:to-amber-500 text-slate-950 border border-yellow-200/80 shadow-md shadow-amber-500/20 transition active:scale-95 flex items-center gap-1 cursor-pointer">
+          <svg class="w-3.5 h-3.5 shrink-0 gold-bar-glow" viewBox="0 0 24 24" fill="none">
+            <path d="M5.5 7.5L8.5 5H15.5L18.5 7.5L21 17.5H3L5.5 7.5Z" fill="#78350F" stroke="#451A03" stroke-width="1.4" stroke-linejoin="round"/>
+            <path d="M8.5 5H15.5L17 9.5H7L8.5 5Z" fill="#FEF08A"/>
+            <path d="M7 9.5H17L19.2 16.5H4.8L7 9.5Z" fill="#F59E0B"/>
+          </svg>
+          <span id="serverSaveBtnLabel">서버연동</span>
+        </button>
+
+        <button id="logoutBtn" type="button" class="hidden px-2 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 transition cursor-pointer">
+          로그아웃
         </button>
       </div>
     </div>
+  </header>
 
-    <!-- Side Panel (Score, Next, Controls) -->
-    <div class="flex flex-col justify-between w-48 gap-4">
-      <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 flex flex-col gap-3">
+  <!-- 메인 컨테이너 -->
+  <main class="flex-1 max-w-3xl w-full mx-auto px-3 py-2 sm:py-5 flex flex-col items-center gap-3">
+
+    <!-- ========================================== -->
+    <!-- 1. 첫 화면 게임 플레이 영역 (모바일 1뷰포트 맞춤) -->
+    <!-- ========================================== -->
+    <section class="w-full flex flex-col items-center justify-center gap-2">
+
+      <!-- 모바일 상단 콤팩트 상태 바 (폰 화면에서 한눈에 보이도록 배치) -->
+      <div class="flex sm:hidden w-full max-w-[320px] items-center justify-between bg-slate-900/95 border border-slate-800 rounded-xl px-3 py-1.5 shadow">
         <div>
-          <span class="text-[11px] font-bold text-slate-400">점수 (SCORE)</span>
-          <div id="scoreVal" class="text-xl font-black text-amber-400">0</div>
+          <div class="text-[9px] font-bold text-slate-400">SCORE</div>
+          <div id="mobileScoreVal" class="text-base font-black text-amber-400 leading-tight">0</div>
         </div>
-        <div>
-          <span class="text-[11px] font-bold text-slate-400">지운 줄 (LINES)</span>
-          <div id="linesVal" class="text-xl font-black text-emerald-400">0</div>
+        <div class="text-center">
+          <div class="text-[9px] font-bold text-slate-400">LINES</div>
+          <div id="mobileLinesVal" class="text-base font-black text-emerald-400 leading-tight">0</div>
         </div>
-        <div>
-          <span class="text-[11px] font-bold text-slate-400">다음 블록 (NEXT)</span>
-          <div class="mt-1 bg-slate-900 border border-slate-800 rounded-lg p-2 flex justify-center">
-            <div id="nextBoard" class="grid grid-cols-4 grid-rows-4"></div>
+        <div class="flex items-center gap-1.5">
+          <span class="text-[9px] font-bold text-slate-400">NEXT</span>
+          <div class="bg-slate-950 border border-slate-800 rounded-md p-1">
+            <div id="mobileNextBoard" class="grid grid-cols-4 grid-rows-4"></div>
           </div>
         </div>
       </div>
 
-      <!-- Desktop Controls Guide -->
-      <div class="hidden sm:block text-[11px] text-slate-400 bg-slate-950/50 border border-slate-800 rounded-xl p-3">
-        <div class="font-bold text-slate-300 mb-1">⌨️ 조작법</div>
-        <div>← → : 이동</div>
-        <div>↑ : 회전</div>
-        <div>↓ : 소프트 드롭</div>
-        <div>SPACE : 하드 드롭</div>
+      <!-- 게임 보드 + 데스크톱 사이드 패널 -->
+      <div class="flex flex-col sm:flex-row gap-5 bg-slate-900/90 border border-slate-800 p-2.5 sm:p-5 rounded-2xl shadow-2xl items-center">
+        <!-- 10x20 테트리스 보드 -->
+        <div class="relative bg-slate-950 border-2 border-slate-700 rounded-xl overflow-hidden shadow-inner">
+          <div id="board" class="grid grid-cols-10 grid-rows-20"></div>
+
+          <!-- 시작 / 게임오버 오버레이 -->
+          <div id="overlay" class="absolute inset-0 bg-slate-950/85 backdrop-blur-sm flex flex-col items-center justify-center gap-2.5 p-4 text-center z-10">
+            <div class="text-2xl">🧱</div>
+            <h2 id="overlayTitle" class="text-lg sm:text-xl font-black text-amber-300">케트리스</h2>
+            <p id="overlayDesc" class="text-xs text-slate-300 leading-relaxed">블록을 쌓아 줄을 지우고<br/>명예의 전당 1위에 도전하세요!</p>
+            <button id="startBtn" type="button" class="mt-1 px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-sm shadow-lg shadow-amber-500/30 transition active:scale-95 cursor-pointer">
+              게임 시작
+            </button>
+          </div>
+        </div>
+
+        <!-- 데스크톱 전용 우측 정보 패널 -->
+        <div class="hidden sm:flex flex-col justify-between w-44 gap-4">
+          <div class="bg-slate-950/85 border border-slate-800 rounded-xl p-4 flex flex-col gap-3">
+            <div>
+              <span class="text-[11px] font-bold text-slate-400">점수 (SCORE)</span>
+              <div id="scoreVal" class="text-2xl font-black text-amber-400">0</div>
+            </div>
+            <div>
+              <span class="text-[11px] font-bold text-slate-400">지운 줄 (LINES)</span>
+              <div id="linesVal" class="text-xl font-black text-emerald-400">0</div>
+            </div>
+            <div>
+              <span class="text-[11px] font-bold text-slate-400">다음 블록 (NEXT)</span>
+              <div class="mt-1.5 bg-slate-900 border border-slate-800 rounded-lg p-2 flex justify-center">
+                <div id="nextBoard" class="grid grid-cols-4 grid-rows-4"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="text-[11px] text-slate-400 bg-slate-950/60 border border-slate-800 rounded-xl p-3 leading-relaxed">
+            <div class="font-bold text-slate-200 mb-1">⌨️ 키보드 조작</div>
+            <div>← → : 좌우 이동</div>
+            <div>↑ : 블록 회전</div>
+            <div>↓ : 빠르게 내리기</div>
+            <div>SPACE : 즉시 내리기</div>
+          </div>
+        </div>
       </div>
+
+      <!-- 모바일 터치 컨트롤러 (첫 화면 하단에 바로 보이도록 콤팩트 배치) -->
+      <div class="grid grid-cols-5 gap-1.5 sm:hidden w-full max-w-[320px]">
+        <button id="btnLeft" type="button" class="touch-btn py-3 bg-slate-800 active:bg-slate-700 border border-slate-700 rounded-xl font-black text-base shadow">◀</button>
+        <button id="btnDown" type="button" class="touch-btn py-3 bg-slate-800 active:bg-slate-700 border border-slate-700 rounded-xl font-black text-base shadow">▼</button>
+        <button id="btnRotate" type="button" class="touch-btn py-3 bg-indigo-900/90 active:bg-indigo-800 border border-indigo-700 rounded-xl font-black text-base shadow">🔄</button>
+        <button id="btnRight" type="button" class="touch-btn py-3 bg-slate-800 active:bg-slate-700 border border-slate-700 rounded-xl font-black text-base shadow">▶</button>
+        <button id="btnDrop" type="button" class="touch-btn py-3 bg-amber-500 active:bg-amber-400 text-slate-950 rounded-xl font-black text-xs shadow">⚡낙하</button>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- 2. 케트리스 실시간 랭킹 (명예의 전당) 섹션 -->
+    <!-- ========================================== -->
+    <section class="w-full bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl mt-2">
+      <div class="flex items-center justify-between gap-2 mb-3">
+        <div>
+          <h2 class="text-sm sm:text-base font-black text-amber-300 flex items-center gap-1.5">
+            <span>🏆</span>
+            <span>케트리스 명예의 전당 (실시간 랭킹)</span>
+          </h2>
+          <p class="text-[11px] text-slate-400 mt-0.5">용사 키우기와 동일한 통합 계정으로 점수가 자동 등록됩니다</p>
+        </div>
+        <button id="refreshRankingBtn" type="button" class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 transition active:scale-95 cursor-pointer shrink-0">
+          🔄 새로고침
+        </button>
+      </div>
+
+      <!-- 내 현재 순위 요약 바 -->
+      <div class="rounded-xl bg-gradient-to-r from-sky-950/60 via-slate-950 to-slate-950 border border-sky-500/35 px-3.5 py-2 flex items-center justify-between text-xs mb-3">
+        <span class="text-slate-300 font-semibold">내 현재 순위:</span>
+        <span id="myRankDetailText" class="font-extrabold text-sky-300">로그인 후 플레이 시 순위에 자동 등록됩니다</span>
+      </div>
+
+      <!-- 랭킹 리스트 -->
+      <div id="rankingListContainer" class="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-1"></div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- 3. Android 바탕화면 바로가기 아이콘 만들기 카드 -->
+    <!-- ========================================== -->
+    <section class="w-full bg-gradient-to-br from-slate-900 via-slate-900 to-amber-950/30 border border-amber-500/35 rounded-2xl p-4 shadow-xl mb-6">
+      <div class="flex items-center gap-3.5">
+        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl border-2 border-amber-400/80 shadow-lg shadow-amber-500/25 bg-gradient-to-br from-amber-400 via-orange-500 to-amber-700 flex items-center justify-center shrink-0 text-2xl sm:text-3xl">
+          🧱
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="text-xs sm:text-sm font-extrabold text-amber-300 mb-1.5">
+            📱 안드로이드 바탕화면 바로가기 (Android Chrome)
+          </div>
+          <button id="androidInstallBtn" type="button"
+            class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-b from-amber-300 via-amber-400 to-amber-600 hover:from-yellow-200 hover:to-amber-500 active:scale-[0.98] text-slate-950 font-black text-xs sm:text-sm border border-yellow-200/80 shadow-lg shadow-amber-500/25 transition flex items-center justify-center gap-1.5 cursor-pointer">
+            <span>🧱</span>
+            <span id="androidInstallBtnText">아이콘 만들기</span>
+          </button>
+          <p id="androidInstallHint" class="text-[11px] text-slate-400 mt-1.5">
+            버튼을 누르면 스마트폰 바탕화면에 케트리스 아이콘이 설치됩니다.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Toast 알림 -->
+  <div id="toastBox" class="pointer-events-none fixed bottom-5 left-1/2 -translate-x-1/2 z-50 opacity-0 transition-all duration-200 translate-y-2">
+    <div id="toastMsg" class="px-4 py-2 rounded-xl bg-slate-900/95 border border-amber-500/50 text-xs sm:text-sm font-bold text-amber-200 shadow-2xl">
+      알림 메시지
     </div>
   </div>
 
-  <!-- Mobile Touch Controls -->
-  <div class="flex sm:hidden gap-2 mt-4 w-full max-w-xs">
-    <button id="btnLeft" class="flex-1 py-3 bg-slate-800 active:bg-slate-700 rounded-xl font-bold text-lg">◀</button>
-    <button id="btnRotate" class="flex-1 py-3 bg-slate-800 active:bg-slate-700 rounded-xl font-bold text-lg">🔄</button>
-    <button id="btnRight" class="flex-1 py-3 bg-slate-800 active:bg-slate-700 rounded-xl font-bold text-lg">▶</button>
-    <button id="btnDrop" class="flex-1 py-3 bg-amber-600 active:bg-amber-500 rounded-xl font-bold text-lg">⬇</button>
+  <!-- 통합 계정 로그인 / 회원가입 모달 -->
+  <div id="authModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+    <div class="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-sm w-full p-5 shadow-2xl">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-2">
+          <span class="text-lg">🟨</span>
+          <h2 class="text-base font-extrabold text-amber-300">통합 게임 계정 연동</h2>
+        </div>
+        <button id="authCloseBtn" type="button" class="text-slate-400 hover:text-slate-200 text-sm font-bold px-2 py-1 cursor-pointer">✕</button>
+      </div>
+      <p class="text-xs text-slate-400 leading-relaxed mb-4">
+        휴대폰 번호 뒷 8자리와 숫자 비밀번호 4자리로 로그인하면 모든 게임의 점수와 랭킹이 통합 관리됩니다.
+      </p>
+
+      <div class="flex rounded-xl bg-slate-950 p-1 border border-slate-800 mb-4">
+        <button id="modeLoginBtn" type="button" class="flex-1 py-1.5 rounded-lg text-xs font-extrabold bg-amber-500 text-slate-950 transition cursor-pointer">
+          기존 계정 로그인
+        </button>
+        <button id="modeRegisterBtn" type="button" class="flex-1 py-1.5 rounded-lg text-xs font-extrabold text-slate-400 hover:text-slate-200 transition cursor-pointer">
+          간편 회원가입
+        </button>
+      </div>
+
+      <form id="authForm" class="flex flex-col gap-3.5">
+        <div>
+          <label class="block text-[11px] font-bold text-slate-300 mb-1.5">아이디 (휴대폰 번호 뒷 8자리)</label>
+          <div class="flex items-center rounded-xl bg-slate-950 border border-slate-700 focus-within:border-amber-400 overflow-hidden">
+            <span class="px-3 py-2.5 bg-slate-900 text-amber-300 font-extrabold text-sm border-r border-slate-800 select-none">010 -</span>
+            <input id="authPhoneDigits" type="tel" inputmode="numeric" maxlength="9" required placeholder="1234-5678 (숫자 8자리)"
+              class="w-full px-3 py-2.5 bg-transparent text-sm font-bold tracking-wider text-slate-100 focus:outline-none" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold text-slate-300 mb-1.5">비밀번호 (숫자 4자리)</label>
+          <input id="authPinCode" type="password" inputmode="numeric" maxlength="4" pattern="\d{4}" required placeholder="숫자 4자리 입력"
+            class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm font-bold tracking-[0.35em] text-slate-100 focus:outline-none focus:border-amber-400" />
+        </div>
+
+        <div id="authErrorMsg" class="hidden text-xs text-rose-400 font-semibold bg-rose-950/40 border border-rose-800/50 rounded-lg px-3 py-2"></div>
+
+        <button id="authSubmitBtn" type="submit" class="w-full py-2.5 rounded-xl text-xs sm:text-sm font-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 shadow-lg shadow-amber-500/20 transition mt-0.5 cursor-pointer">
+          로그인 및 점수 연동
+        </button>
+      </form>
+    </div>
   </div>
 
   <script>
-    const ROWS = 20;
-    const COLS = 10;
-    const boardEl = document.getElementById('board');
-    const nextBoardEl = document.getElementById('nextBoard');
-    const scoreValEl = document.getElementById('scoreVal');
-    const linesValEl = document.getElementById('linesVal');
-    const overlayEl = document.getElementById('overlay');
-    const overlayTitle = document.getElementById('overlayTitle');
-    const overlayDesc = document.getElementById('overlayDesc');
-    const startBtn = document.getElementById('startBtn');
+    (() => {
+      // ==========================================
+      // 0. PWA 설치 & Service Worker 등록
+      // ==========================================
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      }
 
-    let board = Array(ROWS).fill(null).map(() => Array(COLS).fill(0));
-    let score = 0;
-    let lines = 0;
-    let gameOver = false;
-    let gameInterval = null;
-    let dropInterval = 500;
+      let deferredInstallPrompt = null;
+      const installBtn = document.getElementById('androidInstallBtn');
+      const installBtnText = document.getElementById('androidInstallBtnText');
+      const installHint = document.getElementById('androidInstallHint');
 
-    const SHAPES = [
-      { shape: [[1,1,1,1]], color: 'bg-cyan-400 shadow-cyan-500/50' }, // I
-      { shape: [[2,0,0],[2,2,2]], color: 'bg-blue-500 shadow-blue-500/50' }, // J
-      { shape: [[0,0,3],[3,3,3]], color: 'bg-orange-500 shadow-orange-500/50' }, // L
-      { shape: [[4,4],[4,4]], color: 'bg-yellow-400 shadow-yellow-500/50' }, // O
-      { shape: [[0,5,5],[5,5,0]], color: 'bg-emerald-500 shadow-emerald-500/50' }, // S
-      { shape: [[0,6,0],[6,6,6]], color: 'bg-purple-500 shadow-purple-500/50' }, // T
-      { shape: [[7,7,0],[0,7,7]], color: 'bg-rose-500 shadow-rose-500/50' } // Z
-    ];
+      if (window.matchMedia('(display-mode: standalone)').matches) {
+        installBtnText.textContent = '바탕화면 아이콘 설치 완료됨';
+        installBtn.disabled = true;
+        installBtn.className = 'w-full py-2.5 px-4 rounded-xl bg-slate-800 text-slate-400 font-bold text-xs sm:text-sm border border-slate-700 cursor-default flex items-center justify-center gap-1.5';
+      }
 
-    let currentPiece = null;
-    let nextPiece = null;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        installBtnText.textContent = '아이콘 만들기 (지금 설치 가능)';
+        installHint.textContent = '준비 완료! 버튼을 누르면 바탕화면에 앱 아이콘이 생성됩니다.';
+        installHint.className = 'text-[11px] text-emerald-400 font-semibold mt-1.5';
+      });
 
-    // Initialize DOM Grids
-    function initGrids() {
-      boardEl.innerHTML = '';
-      for (let r = 0; r < ROWS; r++) {
-        for (let c = 0; c < COLS; c++) {
-          const cell = document.createElement('div');
-          cell.className = 'board-cell bg-slate-900/60';
-          cell.id = `cell-${r}-${c}`;
-          boardEl.appendChild(cell);
+      window.addEventListener('appinstalled', () => {
+        deferredInstallPrompt = null;
+        installBtnText.textContent = '바탕화면 아이콘 생성 완료!';
+        showToast('📲 스마트폰 바탕화면에 [케트리스] 아이콘이 생성되었습니다!');
+      });
+
+      installBtn.addEventListener('click', async () => {
+        if (deferredInstallPrompt) {
+          deferredInstallPrompt.prompt();
+          await deferredInstallPrompt.userChoice;
+          deferredInstallPrompt = null;
+        } else {
+          showToast('⚠️ Chrome 브라우저 우측 상단 [⋮] 메뉴 → [홈 화면에 추가]를 눌러주세요.');
+        }
+      });
+
+      // ==========================================
+      // 1. 클라우드 통합 서버 연결 & 계정 관리
+      // ==========================================
+      const GAME_ID = 'ketris';
+      const CLOUD_API_URL = 'https://02826k.duckdns.org';
+      const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const API_BASE_URL = isLocalHost ? '' : CLOUD_API_URL;
+
+      // 용사 키우기와 동일한 토큰 키 공유 -> 한 번 로그인하면 자동 연동
+      const TOKEN_KEY = 'hero_clicker_jwt_token';
+      const USER_KEY = 'hero_clicker_username';
+      const LOCAL_BEST_KEY = 'ketris_local_best_v1';
+
+      let authToken = localStorage.getItem(TOKEN_KEY) || null;
+      let currentUsername = localStorage.getItem(USER_KEY) || null;
+      let bestScore = Number(localStorage.getItem(LOCAL_BEST_KEY) || 0);
+      let bestLines = 0;
+      let isRegisterMode = false;
+
+      document.getElementById('bestScoreHeader').textContent = bestScore.toLocaleString('ko-KR');
+
+      let toastTimeout = null;
+      function showToast(message) {
+        const box = document.getElementById('toastBox');
+        const msg = document.getElementById('toastMsg');
+        msg.textContent = message;
+        box.classList.remove('opacity-0', 'translate-y-2');
+        box.classList.add('opacity-100', 'translate-y-0');
+        if (toastTimeout) clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => {
+          box.classList.remove('opacity-100', 'translate-y-0');
+          box.classList.add('opacity-0', 'translate-y-2');
+        }, 2300);
+      }
+
+      function updateAuthHeaderUI() {
+        const userBadge = document.getElementById('userBadge');
+        const saveBtnLabel = document.getElementById('serverSaveBtnLabel');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        if (authToken && currentUsername) {
+          userBadge.textContent = `📱 ${currentUsername}`;
+          userBadge.className = 'px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 truncate';
+          saveBtnLabel.textContent = '점수저장';
+          logoutBtn.classList.remove('hidden');
+        } else {
+          userBadge.textContent = '👤 게스트';
+          userBadge.className = 'px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold bg-slate-800 border border-slate-700 text-slate-300 truncate';
+          saveBtnLabel.textContent = '서버연동';
+          logoutBtn.classList.add('hidden');
         }
       }
 
-      nextBoardEl.innerHTML = '';
-      for (let r = 0; r < 4; r++) {
-        for (let c = 0; c < 4; c++) {
-          const cell = document.createElement('div');
-          cell.className = 'preview-cell bg-slate-900/60 rounded-sm';
-          cell.id = `next-${r}-${c}`;
-          nextBoardEl.appendChild(cell);
+      function handleLogout(expired = false) {
+        authToken = null;
+        currentUsername = null;
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(USER_KEY);
+        updateAuthHeaderUI();
+        fetchAndRenderRanking(false);
+        showToast(expired ? '로그인 정보가 만료되었습니다.' : '로그아웃되었습니다.');
+      }
+
+      async function loadFromServer() {
+        if (!authToken) return;
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/load?gameId=${GAME_ID}`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+          });
+          if (res.status === 401 || res.status === 403) {
+            handleLogout(true);
+            return;
+          }
+          const data = await res.json();
+          if (res.ok) {
+            const serverBest = Math.max(data.score || 0, data.saveData?.bestScore || 0);
+            if (serverBest > bestScore) {
+              bestScore = serverBest;
+              localStorage.setItem(LOCAL_BEST_KEY, String(bestScore));
+              document.getElementById('bestScoreHeader').textContent = bestScore.toLocaleString('ko-KR');
+            }
+            if (data.saveData?.bestLines) bestLines = data.saveData.bestLines;
+          }
+        } catch (e) {}
+      }
+
+      async function saveScoreToServer(currentScore, currentLines, showNotification = false) {
+        if (currentScore > bestScore) {
+          bestScore = currentScore;
+          localStorage.setItem(LOCAL_BEST_KEY, String(bestScore));
+          document.getElementById('bestScoreHeader').textContent = bestScore.toLocaleString('ko-KR');
+        }
+        if (currentLines > bestLines) {
+          bestLines = currentLines;
+        }
+
+        if (!authToken) {
+          if (showNotification) {
+            openAuthModal();
+          }
+          return;
+        }
+
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/save`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify({
+              gameId: GAME_ID,
+              score: bestScore,
+              saveData: {
+                bestScore,
+                bestLines,
+                lastScore: currentScore,
+                lastLines: currentLines
+              }
+            })
+          });
+          if (res.status === 401 || res.status === 403) {
+            handleLogout(true);
+            return;
+          }
+          if (res.ok) {
+            if (showNotification) {
+              showToast(`🏆 최고 기록 ${bestScore.toLocaleString('ko-KR')}점이 클라우드 서버에 저장되었습니다!`);
+            }
+            fetchAndRenderRanking(false);
+          }
+        } catch (e) {
+          if (showNotification) showToast('⚠️ 서버 연결에 실패했습니다.');
         }
       }
-    }
 
-    function getRandomPiece() {
-      const rand = SHAPES[Math.floor(Math.random() * SHAPES.length)];
-      return {
-        shape: rand.shape,
-        color: rand.color,
-        row: 0,
-        col: Math.floor(COLS / 2) - Math.floor(rand.shape[0].length / 2)
-      };
-    }
+      async function fetchAndRenderRanking(showToastMsg = false) {
+        const listContainer = document.getElementById('rankingListContainer');
+        const myRankDetail = document.getElementById('myRankDetailText');
 
-    function startGame() {
-      board = Array(ROWS).fill(null).map(() => Array(COLS).fill(0));
-      score = 0;
-      lines = 0;
-      gameOver = false;
-      scoreValEl.textContent = score;
-      linesValEl.textContent = lines;
-      overlayEl.classList.add('hidden');
+        try {
+          const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
+          const res = await fetch(`${API_BASE_URL}/api/ranking?gameId=${GAME_ID}`, { headers });
+          const data = await res.json();
 
-      currentPiece = getRandomPiece();
-      nextPiece = getRandomPiece();
+          if (!res.ok) throw new Error();
 
-      if (gameInterval) clearInterval(gameInterval);
-      gameInterval = setInterval(gameLoop, dropInterval);
-      render();
-    }
+          const rankings = data.rankings || [];
+          const myRank = data.myRank;
 
-    function gameLoop() {
-      moveDown();
-    }
+          if (myRank) {
+            myRankDetail.textContent = `전체 ${data.totalPlayers}명 중 ${myRank.rank}위 (최고 ${myRank.score.toLocaleString('ko-KR')}점)`;
+          } else if (authToken) {
+            myRankDetail.textContent = '게임을 플레이하면 순위에 자동 등록됩니다';
+          } else {
+            myRankDetail.textContent = '상단 [서버연동] 로그인 시 랭킹에 등록됩니다';
+          }
 
-    function moveDown() {
-      currentPiece.row++;
-      if (checkCollision()) {
+          listContainer.innerHTML = '';
+          if (rankings.length === 0) {
+            listContainer.innerHTML = `
+              <div class="text-center py-6 text-xs text-slate-400 bg-slate-950/60 rounded-xl border border-slate-800">
+                아직 등록된 케트리스 기록이 없습니다. 첫 번째 1위에 도전해 보세요!
+              </div>
+            `;
+            return;
+          }
+
+          rankings.forEach((item) => {
+            let rankBadgeHtml = `<span class="w-7 h-7 rounded-lg bg-slate-800 text-slate-300 font-extrabold text-xs flex items-center justify-center shrink-0">${item.rank}</span>`;
+            let cardStyle = 'bg-slate-950/80 border-slate-800';
+
+            if (item.rank === 1) {
+              rankBadgeHtml = `<span class="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-300 to-amber-500 text-slate-950 font-black text-sm flex items-center justify-center shadow shrink-0">🥇</span>`;
+              cardStyle = 'bg-gradient-to-r from-amber-950/40 via-slate-950 to-slate-950 border-amber-500/60';
+            } else if (item.rank === 2) {
+              rankBadgeHtml = `<span class="w-7 h-7 rounded-lg bg-gradient-to-br from-slate-200 to-slate-400 text-slate-950 font-black text-sm flex items-center justify-center shadow shrink-0">🥈</span>`;
+              cardStyle = 'bg-gradient-to-r from-slate-800/40 via-slate-950 to-slate-950 border-slate-400/50';
+            } else if (item.rank === 3) {
+              rankBadgeHtml = `<span class="w-7 h-7 rounded-lg bg-gradient-to-br from-orange-400 to-amber-700 text-white font-black text-sm flex items-center justify-center shadow shrink-0">🥉</span>`;
+              cardStyle = 'bg-gradient-to-r from-orange-950/35 via-slate-950 to-slate-950 border-orange-500/45';
+            }
+
+            if (item.isMe) cardStyle += ' ring-1 ring-sky-400';
+
+            const rowEl = document.createElement('div');
+            rowEl.className = `rounded-xl px-3.5 py-2 border ${cardStyle} flex items-center justify-between gap-2`;
+            rowEl.innerHTML = `
+              <div class="flex items-center gap-2.5 min-w-0">
+                ${rankBadgeHtml}
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <span class="text-xs sm:text-sm font-extrabold text-slate-100 truncate">${item.maskedName}</span>
+                  ${item.isMe ? '<span class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/40 text-[10px] font-bold">나</span>' : ''}
+                </div>
+              </div>
+              <div class="text-right shrink-0">
+                <span class="text-xs sm:text-sm font-black text-amber-400">${item.score.toLocaleString('ko-KR')} 점</span>
+              </div>
+            `;
+            listContainer.appendChild(rowEl);
+          });
+
+          if (showToastMsg) showToast('🏆 최신 케트리스 랭킹을 불러왔습니다!');
+        } catch (e) {
+          listContainer.innerHTML = `
+            <div class="text-center py-5 text-xs text-rose-300 bg-rose-950/25 rounded-xl border border-rose-800/40">
+              랭킹 서버와 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.
+            </div>
+          `;
+        }
+      }
+
+      // 인증 모달 제어
+      const authModal = document.getElementById('authModal');
+      const modeLoginBtn = document.getElementById('modeLoginBtn');
+      const modeRegisterBtn = document.getElementById('modeRegisterBtn');
+      const authSubmitBtn = document.getElementById('authSubmitBtn');
+      const authErrorMsg = document.getElementById('authErrorMsg');
+      const phoneInput = document.getElementById('authPhoneDigits');
+      const pinInput = document.getElementById('authPinCode');
+
+      function openAuthModal() {
+        setAuthMode(false);
+        authModal.classList.remove('hidden');
+        authModal.classList.add('flex');
+        setTimeout(() => phoneInput.focus(), 50);
+      }
+
+      function setAuthMode(register) {
+        isRegisterMode = register;
+        authErrorMsg.classList.add('hidden');
+        if (register) {
+          modeRegisterBtn.className = 'flex-1 py-1.5 rounded-lg text-xs font-extrabold bg-amber-500 text-slate-950 transition cursor-pointer';
+          modeLoginBtn.className = 'flex-1 py-1.5 rounded-lg text-xs font-extrabold text-slate-400 hover:text-slate-200 transition cursor-pointer';
+          authSubmitBtn.textContent = '가입하고 최고 점수 서버저장';
+        } else {
+          modeLoginBtn.className = 'flex-1 py-1.5 rounded-lg text-xs font-extrabold bg-amber-500 text-slate-950 transition cursor-pointer';
+          modeRegisterBtn.className = 'flex-1 py-1.5 rounded-lg text-xs font-extrabold text-slate-400 hover:text-slate-200 transition cursor-pointer';
+          authSubmitBtn.textContent = '로그인 및 최고 점수 연동';
+        }
+      }
+
+      document.getElementById('serverSaveGoldBtn').addEventListener('click', () => {
+        if (authToken) {
+          saveScoreToServer(Math.max(score, bestScore), Math.max(lines, bestLines), true);
+        } else {
+          openAuthModal();
+        }
+      });
+
+      document.getElementById('logoutBtn').addEventListener('click', () => handleLogout(false));
+      document.getElementById('authCloseBtn').addEventListener('click', () => {
+        authModal.classList.add('hidden');
+        authModal.classList.remove('flex');
+      });
+      modeLoginBtn.addEventListener('click', () => setAuthMode(false));
+      modeRegisterBtn.addEventListener('click', () => setAuthMode(true));
+
+      phoneInput.addEventListener('input', (e) => {
+        const digits = e.target.value.replace(/\D/g, '').slice(0, 8);
+        e.target.value = digits.length > 4 ? `${digits.slice(0, 4)}-${digits.slice(4)}` : digits;
+      });
+      pinInput.addEventListener('input', (e) => {
+        e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4);
+      });
+
+      document.getElementById('authForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        authErrorMsg.classList.add('hidden');
+
+        const rawDigits = phoneInput.value.replace(/\D/g, '');
+        const pin = pinInput.value.trim();
+
+        if (rawDigits.length !== 8) {
+          authErrorMsg.textContent = '휴대폰 번호 뒷 8자리 숫자를 모두 입력해 주세요.';
+          authErrorMsg.classList.remove('hidden');
+          return;
+        }
+        if (!/^\d{4}$/.test(pin)) {
+          authErrorMsg.textContent = '비밀번호는 숫자 4자리로 입력해 주세요.';
+          authErrorMsg.classList.remove('hidden');
+          return;
+        }
+
+        const fullPhoneId = `010-${rawDigits.slice(0, 4)}-${rawDigits.slice(4)}`;
+        const endpoint = isRegisterMode ? '/api/register' : '/api/login';
+        const currentBest = Math.max(score, bestScore);
+
+        const payload = isRegisterMode
+          ? { username: fullPhoneId, password: pin, gameId: GAME_ID, initialSaveData: { bestScore: currentBest, bestLines } }
+          : { username: fullPhoneId, password: pin, gameId: GAME_ID };
+
+        try {
+          const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+
+          if (!res.ok) {
+            authErrorMsg.textContent = data.error || '처리 중 오류가 발생했습니다.';
+            authErrorMsg.classList.remove('hidden');
+            return;
+          }
+
+          authToken = data.token;
+          currentUsername = data.username;
+          localStorage.setItem(TOKEN_KEY, authToken);
+          localStorage.setItem(USER_KEY, currentUsername);
+
+          const serverBest = data.saveData?.bestScore || 0;
+          if (serverBest > bestScore) {
+            bestScore = serverBest;
+            localStorage.setItem(LOCAL_BEST_KEY, String(bestScore));
+            document.getElementById('bestScoreHeader').textContent = bestScore.toLocaleString('ko-KR');
+          } else if (currentBest > serverBest) {
+            await saveScoreToServer(currentBest, bestLines, false);
+          }
+
+          updateAuthHeaderUI();
+          fetchAndRenderRanking(false);
+          authModal.classList.add('hidden');
+          authModal.classList.remove('flex');
+          pinInput.value = '';
+          showToast(`🟨 [${currentUsername}] 통합 계정 연동 완료!`);
+        } catch (err) {
+          authErrorMsg.textContent = '클라우드 서버와 연결할 수 없습니다.';
+          authErrorMsg.classList.remove('hidden');
+        }
+      });
+
+      document.getElementById('refreshRankingBtn').addEventListener('click', () => fetchAndRenderRanking(true));
+
+      // ==========================================
+      // 2. 케트리스 핵심 게임 엔진 (모바일/PC 공용)
+      // ==========================================
+      const ROWS = 20;
+      const COLS = 10;
+      const boardEl = document.getElementById('board');
+      const nextBoardEl = document.getElementById('nextBoard');
+      const mobileNextBoardEl = document.getElementById('mobileNextBoard');
+      const scoreValEl = document.getElementById('scoreVal');
+      const linesValEl = document.getElementById('linesVal');
+      const mobileScoreValEl = document.getElementById('mobileScoreVal');
+      const mobileLinesValEl = document.getElementById('mobileLinesVal');
+      const overlayEl = document.getElementById('overlay');
+      const overlayTitle = document.getElementById('overlayTitle');
+      const overlayDesc = document.getElementById('overlayDesc');
+      const startBtn = document.getElementById('startBtn');
+
+      let board = Array(ROWS).fill(null).map(() => Array(COLS).fill(0));
+      let score = 0;
+      let lines = 0;
+      let gameOver = false;
+      let gameInterval = null;
+      let dropInterval = 500;
+
+      const SHAPES = [
+        { shape: [[1,1,1,1]], color: 'bg-cyan-400 shadow-cyan-500/50' },
+        { shape: [[2,0,0],[2,2,2]], color: 'bg-blue-500 shadow-blue-500/50' },
+        { shape: [[0,0,3],[3,3,3]], color: 'bg-orange-500 shadow-orange-500/50' },
+        { shape: [[4,4],[4,4]], color: 'bg-yellow-400 shadow-yellow-500/50' },
+        { shape: [[0,5,5],[5,5,0]], color: 'bg-emerald-500 shadow-emerald-500/50' },
+        { shape: [[0,6,0],[6,6,6]], color: 'bg-purple-500 shadow-purple-500/50' },
+        { shape: [[7,7,0],[0,7,7]], color: 'bg-rose-500 shadow-rose-500/50' }
+      ];
+
+      let currentPiece = null;
+      let nextPiece = null;
+
+      function updateScoreDisplays() {
+        const sText = score.toLocaleString('ko-KR');
+        const lText = lines.toLocaleString('ko-KR');
+        scoreValEl.textContent = sText;
+        linesValEl.textContent = lText;
+        mobileScoreValEl.textContent = sText;
+        mobileLinesValEl.textContent = lText;
+
+        if (score > bestScore) {
+          bestScore = score;
+          localStorage.setItem(LOCAL_BEST_KEY, String(bestScore));
+          document.getElementById('bestScoreHeader').textContent = bestScore.toLocaleString('ko-KR');
+        }
+      }
+
+      function initGrids() {
+        boardEl.innerHTML = '';
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            const cell = document.createElement('div');
+            cell.className = 'board-cell bg-slate-900/60';
+            cell.id = `cell-${r}-${c}`;
+            boardEl.appendChild(cell);
+          }
+        }
+
+        [nextBoardEl, mobileNextBoardEl].forEach((container, idx) => {
+          const prefix = idx === 0 ? 'next' : 'mnext';
+          container.innerHTML = '';
+          for (let r = 0; r < 4; r++) {
+            for (let c = 0; c < 4; c++) {
+              const cell = document.createElement('div');
+              cell.className = 'preview-cell bg-slate-900/60 rounded-sm';
+              cell.id = `${prefix}-${r}-${c}`;
+              container.appendChild(cell);
+            }
+          }
+        });
+      }
+
+      function getRandomPiece() {
+        const rand = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+        return {
+          shape: rand.shape,
+          color: rand.color,
+          row: 0,
+          col: Math.floor(COLS / 2) - Math.floor(rand.shape[0].length / 2)
+        };
+      }
+
+      function startGame() {
+        board = Array(ROWS).fill(null).map(() => Array(COLS).fill(0));
+        score = 0;
+        lines = 0;
+        dropInterval = 500;
+        gameOver = false;
+        updateScoreDisplays();
+        overlayEl.classList.add('hidden');
+
+        currentPiece = getRandomPiece();
+        nextPiece = getRandomPiece();
+
+        if (gameInterval) clearInterval(gameInterval);
+        gameInterval = setInterval(moveDown, dropInterval);
+        render();
+      }
+
+      function moveDown() {
+        currentPiece.row++;
+        if (checkCollision()) {
+          currentPiece.row--;
+          mergePiece();
+          clearLines();
+          currentPiece = nextPiece;
+          nextPiece = getRandomPiece();
+          if (checkCollision()) {
+            endGame();
+          }
+        }
+        render();
+      }
+
+      function checkCollision() {
+        for (let r = 0; r < currentPiece.shape.length; r++) {
+          for (let c = 0; c < currentPiece.shape[r].length; c++) {
+            if (currentPiece.shape[r][c]) {
+              const tr = currentPiece.row + r;
+              const tc = currentPiece.col + c;
+              if (tc < 0 || tc >= COLS || tr >= ROWS) return true;
+              if (tr >= 0 && board[tr][tc]) return true;
+            }
+          }
+        }
+        return false;
+      }
+
+      function mergePiece() {
+        for (let r = 0; r < currentPiece.shape.length; r++) {
+          for (let c = 0; c < currentPiece.shape[r].length; c++) {
+            if (currentPiece.shape[r][c]) {
+              const tr = currentPiece.row + r;
+              const tc = currentPiece.col + c;
+              if (tr >= 0) board[tr][tc] = currentPiece.color;
+            }
+          }
+        }
+      }
+
+      function clearLines() {
+        let cleared = 0;
+        for (let r = ROWS - 1; r >= 0; r--) {
+          if (board[r].every(cell => cell !== 0)) {
+            board.splice(r, 1);
+            board.unshift(Array(COLS).fill(0));
+            cleared++;
+            r++;
+          }
+        }
+        if (cleared > 0) {
+          lines += cleared;
+          score += cleared * 100 * cleared;
+          updateScoreDisplays();
+
+          // 10줄마다 속도 소폭 상승
+          const newInterval = Math.max(150, 500 - Math.floor(lines / 10) * 35);
+          if (newInterval !== dropInterval) {
+            dropInterval = newInterval;
+            clearInterval(gameInterval);
+            gameInterval = setInterval(moveDown, dropInterval);
+          }
+        }
+      }
+
+      function rotatePiece() {
+        const originalShape = currentPiece.shape;
+        const rows = originalShape.length;
+        const cols = originalShape[0].length;
+        const rotated = Array(cols).fill(null).map(() => Array(rows).fill(0));
+
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            rotated[c][rows - 1 - r] = originalShape[r][c];
+          }
+        }
+
+        currentPiece.shape = rotated;
+        if (checkCollision()) {
+          currentPiece.shape = originalShape;
+        }
+        render();
+      }
+
+      function hardDrop() {
+        while (!checkCollision()) {
+          currentPiece.row++;
+        }
         currentPiece.row--;
         mergePiece();
         clearLines();
@@ -171,192 +854,134 @@
         if (checkCollision()) {
           endGame();
         }
+        render();
       }
-      render();
-    }
 
-    function checkCollision() {
-      for (let r = 0; r < currentPiece.shape.length; r++) {
-        for (let c = 0; c < currentPiece.shape[r].length; c++) {
-          if (currentPiece.shape[r][c]) {
-            let tr = currentPiece.row + r;
-            let tc = currentPiece.col + c;
-            if (tc < 0 || tc >= COLS || tr >= ROWS) return true;
-            if (tr >= 0 && board[tr][tc]) return true;
+      function endGame() {
+        gameOver = true;
+        clearInterval(gameInterval);
+        overlayTitle.textContent = '게임 오버!';
+        overlayDesc.innerHTML = `최종 점수: <strong class="text-amber-300">${score.toLocaleString('ko-KR')}점</strong><br/>최고 기록: ${bestScore.toLocaleString('ko-KR')}점`;
+        startBtn.textContent = '다시 시작';
+        overlayEl.classList.remove('hidden');
+
+        // 로그인 상태면 최고 점수 자동 클라우드 반영
+        saveScoreToServer(score, lines, false);
+      }
+
+      function renderNextPreview(prefix) {
+        for (let r = 0; r < 4; r++) {
+          for (let c = 0; c < 4; c++) {
+            const cell = document.getElementById(`${prefix}-${r}-${c}`);
+            if (cell) cell.className = 'preview-cell bg-slate-900/60 rounded-sm';
           }
         }
-      }
-      return false;
-    }
-
-    function mergePiece() {
-      for (let r = 0; r < currentPiece.shape.length; r++) {
-        for (let c = 0; c < currentPiece.shape[r].length; c++) {
-          if (currentPiece.shape[r][c]) {
-            let tr = currentPiece.row + r;
-            let tc = currentPiece.col + c;
-            if (tr >= 0) board[tr][tc] = currentPiece.color;
-          }
-        }
-      }
-    }
-
-    function clearLines() {
-      let cleared = 0;
-      for (let r = ROWS - 1; r >= 0; r--) {
-        if (board[r].every(cell => cell !== 0)) {
-          board.splice(r, 1);
-          board.unshift(Array(COLS).fill(0));
-          cleared++;
-          r++; // 체크한 줄 다시 확인
-        }
-      }
-      if (cleared > 0) {
-        lines += cleared;
-        score += cleared * 100 * cleared;
-        scoreValEl.textContent = score;
-        linesValEl.textContent = lines;
-      }
-    }
-
-    function rotatePiece() {
-      const originalShape = currentPiece.shape;
-      const rows = originalShape.length;
-      const cols = originalShape[0].length;
-      let rotated = Array(cols).fill(null).map(() => Array(rows).fill(0));
-
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          rotated[c][rows - 1 - r] = originalShape[r][c];
-        }
-      }
-
-      currentPiece.shape = rotated;
-      if (checkCollision()) {
-        currentPiece.shape = originalShape; // 충돌 시 원복
-      }
-      render();
-    }
-
-    function hardDrop() {
-      while (!checkCollision()) {
-        currentPiece.row++;
-      }
-      currentPiece.row--;
-      mergePiece();
-      clearLines();
-      currentPiece = nextPiece;
-      nextPiece = getRandomPiece();
-      if (checkCollision()) {
-        endGame();
-      }
-      render();
-    }
-
-    function endGame() {
-      gameOver = true;
-      clearInterval(gameInterval);
-      overlayTitle.textContent = "게임 오버!";
-      overlayDesc.textContent = `최종 점수: ${score}점`;
-      startBtn.textContent = "다시 시작";
-      overlayEl.classList.remove('hidden');
-    }
-
-    function render() {
-      // Clear board cells
-      for (let r = 0; r < ROWS; r++) {
-        for (let c = 0; c < COLS; c++) {
-          const cell = document.getElementById(`cell-${r}-${c}`);
-          cell.className = 'board-cell bg-slate-900/60 rounded-xs';
-          if (board[r][c]) {
-            cell.className = `board-cell ${board[r][c]} rounded-xs shadow-md`;
-          }
-        }
-      }
-
-      // Draw current piece
-      if (currentPiece) {
-        for (let r = 0; r < currentPiece.shape.length; r++) {
-          for (let c = 0; c < currentPiece.shape[r].length; c++) {
-            if (currentPiece.shape[r][c]) {
-              let tr = currentPiece.row + r;
-              let tc = currentPiece.col + c;
-              if (tr >= 0 && tr < ROWS && tc >= 0 && tc < COLS) {
-                const cell = document.getElementById(`cell-${tr}-${tc}`);
-                cell.className = `board-cell ${currentPiece.color} rounded-xs shadow-md`;
+        if (nextPiece) {
+          const nr = nextPiece.shape.length;
+          const nc = nextPiece.shape[0].length;
+          const offsetR = Math.floor((4 - nr) / 2);
+          const offsetC = Math.floor((4 - nc) / 2);
+          for (let r = 0; r < nr; r++) {
+            for (let c = 0; c < nc; c++) {
+              if (nextPiece.shape[r][c]) {
+                const cell = document.getElementById(`${prefix}-${r + offsetR}-${c + offsetC}`);
+                if (cell) cell.className = `preview-cell ${nextPiece.color} rounded-sm shadow-sm`;
               }
             }
           }
         }
       }
 
-      // Draw next piece preview
-      for (let r = 0; r < 4; r++) {
-        for (let c = 0; c < 4; c++) {
-          const cell = document.getElementById(`next-${r}-${c}`);
-          cell.className = 'preview-cell bg-slate-900/60 rounded-xs';
+      function render() {
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            const cell = document.getElementById(`cell-${r}-${c}`);
+            cell.className = board[r][c]
+              ? `board-cell ${board[r][c]} rounded-sm shadow-md`
+              : 'board-cell bg-slate-900/60';
+          }
         }
-      }
-      if (nextPiece) {
-        const nr = nextPiece.shape.length;
-        const nc = nextPiece.shape[0].length;
-        const offsetR = Math.floor((4 - nr) / 2);
-        const offsetC = Math.floor((4 - nc) / 2);
-        for (let r = 0; r < nr; r++) {
-          for (let c = 0; c < nc; c++) {
-            if (nextPiece.shape[r][c]) {
-              const cell = document.getElementById(`next-${r + offsetR}-${c + offsetC}`);
-              if (cell) cell.className = `preview-cell ${nextPiece.color} rounded-xs shadow-md`;
+
+        if (currentPiece) {
+          for (let r = 0; r < currentPiece.shape.length; r++) {
+            for (let c = 0; c < currentPiece.shape[r].length; c++) {
+              if (currentPiece.shape[r][c]) {
+                const tr = currentPiece.row + r;
+                const tc = currentPiece.col + c;
+                if (tr >= 0 && tr < ROWS && tc >= 0 && tc < COLS) {
+                  const cell = document.getElementById(`cell-${tr}-${tc}`);
+                  cell.className = `board-cell ${currentPiece.color} rounded-sm shadow-md`;
+                }
+              }
             }
           }
         }
-      }
-    }
 
-    // Keyboard Controls
-    document.addEventListener('keydown', (e) => {
-      if (gameOver || !currentPiece) return;
-      if (e.key === 'ArrowLeft') {
+        renderNextPreview('next');
+        renderNextPreview('mnext');
+      }
+
+      // 키보드 조작 (모달이 열려 있을 때는 무시)
+      document.addEventListener('keydown', (e) => {
+        if (!authModal.classList.contains('hidden')) return;
+        if (gameOver || !currentPiece) return;
+        if (['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp', ' '].includes(e.key)) {
+          e.preventDefault();
+        }
+        if (e.key === 'ArrowLeft') {
+          currentPiece.col--;
+          if (checkCollision()) currentPiece.col++;
+          render();
+        } else if (e.key === 'ArrowRight') {
+          currentPiece.col++;
+          if (checkCollision()) currentPiece.col--;
+          render();
+        } else if (e.key === 'ArrowDown') {
+          moveDown();
+        } else if (e.key === 'ArrowUp') {
+          rotatePiece();
+        } else if (e.key === ' ') {
+          hardDrop();
+        }
+      });
+
+      // 모바일 터치 버튼 조작
+      document.getElementById('btnLeft').addEventListener('click', () => {
+        if (gameOver || !currentPiece) return;
         currentPiece.col--;
         if (checkCollision()) currentPiece.col++;
         render();
-      } else if (e.key === 'ArrowRight') {
+      });
+      document.getElementById('btnRight').addEventListener('click', () => {
+        if (gameOver || !currentPiece) return;
         currentPiece.col++;
         if (checkCollision()) currentPiece.col--;
         render();
-      } else if (e.key === 'ArrowDown') {
+      });
+      document.getElementById('btnDown').addEventListener('click', () => {
+        if (gameOver || !currentPiece) return;
         moveDown();
-      } else if (e.key === 'ArrowUp') {
+      });
+      document.getElementById('btnRotate').addEventListener('click', () => {
+        if (gameOver || !currentPiece) return;
         rotatePiece();
-      } else if (e.key === ' ') {
+      });
+      document.getElementById('btnDrop').addEventListener('click', () => {
+        if (gameOver || !currentPiece) return;
         hardDrop();
+      });
+
+      startBtn.addEventListener('click', startGame);
+
+      // 초기 로드
+      initGrids();
+      updateAuthHeaderUI();
+      if (authToken) {
+        loadFromServer().then(() => fetchAndRenderRanking(false));
+      } else {
+        fetchAndRenderRanking(false);
       }
-    });
-
-    // Mobile Buttons
-    document.getElementById('btnLeft').addEventListener('click', () => {
-      if (gameOver || !currentPiece) return;
-      currentPiece.col--;
-      if (checkCollision()) currentPiece.col++;
-      render();
-    });
-    document.getElementById('btnRight').addEventListener('click', () => {
-      if (gameOver || !currentPiece) return;
-      currentPiece.col++;
-      if (checkCollision()) currentPiece.col--;
-      render();
-    });
-    document.getElementById('btnRotate').addEventListener('click', () => {
-      if (gameOver || !currentPiece) return;
-      rotatePiece();
-    });
-    document.getElementById('btnDrop').addEventListener('click', () => {
-      if (gameOver || !currentPiece) return;
-      hardDrop();
-    });
-
-    startBtn.addEventListener('click', startGame);
-    initGrids();
+    })();
   </script>
 </body>
 </html>
