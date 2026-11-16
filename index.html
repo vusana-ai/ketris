@@ -33,8 +33,19 @@
     .board-cell {
       width: var(--cell-size);
       height: var(--cell-size);
-      border: 1px solid rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(56, 189, 248, 0.08);
+      transition: transform 0.06s ease;
     }
+    .neon-blk { position: relative; border-radius: 4px !important; z-index: 2; }
+    .neon-cyan { background: linear-gradient(135deg, rgba(0,255,255,0.88), rgba(0,180,255,0.45)); border: 2px solid #b8ffff !important; box-shadow: inset 0 0 10px #ffffff, inset 2px 2px 4px rgba(255,255,255,0.95), 0 0 14px #00f5ff, 0 0 24px rgba(0,245,255,0.7); }
+    .neon-blue { background: linear-gradient(135deg, rgba(70,155,255,0.90), rgba(30,90,255,0.48)); border: 2px solid #cfe2ff !important; box-shadow: inset 0 0 10px #ffffff, inset 2px 2px 4px rgba(255,255,255,0.95), 0 0 14px #3b82f6, 0 0 24px rgba(59,130,246,0.75); }
+    .neon-orange { background: linear-gradient(135deg, rgba(255,165,30,0.92), rgba(255,95,0,0.48)); border: 2px solid #ffe4b5 !important; box-shadow: inset 0 0 10px #fff3d6, inset 2px 2px 4px rgba(255,255,255,0.95), 0 0 14px #ff8c00, 0 0 24px rgba(255,140,0,0.75); }
+    .neon-yellow { background: linear-gradient(135deg, rgba(255,245,40,0.92), rgba(235,180,0,0.48)); border: 2px solid #ffffcc !important; box-shadow: inset 0 0 10px #ffffff, inset 2px 2px 4px rgba(255,255,255,0.95), 0 0 14px #ffee00, 0 0 24px rgba(255,238,0,0.78); }
+    .neon-emerald { background: linear-gradient(135deg, rgba(0,255,145,0.90), rgba(0,190,95,0.45)); border: 2px solid #c4ffe0 !important; box-shadow: inset 0 0 10px #ffffff, inset 2px 2px 4px rgba(255,255,255,0.95), 0 0 14px #00ff88, 0 0 24px rgba(0,255,136,0.75); }
+    .neon-purple { background: linear-gradient(135deg, rgba(255,60,255,0.90), rgba(185,20,255,0.48)); border: 2px solid #ffd1ff !important; box-shadow: inset 0 0 10px #ffffff, inset 2px 2px 4px rgba(255,255,255,0.95), 0 0 14px #ff2aff, 0 0 24px rgba(255,42,255,0.78); }
+    .neon-rose { background: linear-gradient(135deg, rgba(255,55,115,0.92), rgba(220,20,75,0.48)); border: 2px solid #ffc7d9 !important; box-shadow: inset 0 0 10px #ffffff, inset 2px 2px 4px rgba(255,255,255,0.95), 0 0 14px #ff2a6d, 0 0 24px rgba(255,42,109,0.75); }
+    @keyframes linePop { 0% { filter: brightness(2.2); transform: scale(1.06); } 100% { filter: brightness(1); transform: scale(1); } }
+    .line-pop { animation: linePop 0.25s ease-out; }
     .preview-cell {
       width: var(--preview-size);
       height: var(--preview-size);
@@ -308,7 +319,7 @@
       let bgmEnabled = (() => { try { return localStorage.getItem(BGM_KEY) !== 'false'; } catch { return true; } })();
       let soundEnabled = (() => { try { return localStorage.getItem(SFX_KEY) !== 'false'; } catch { return true; } })();
       let audioCtx = null, bgmTimer = null, bgmStep = 0, bgmAudio = null, bgmFileFailed = false;
-      const bgmNotes = [196, 247, 294, 392, 349, 294, 247, 220];
+      const bgmNotes = [261.63, 329.63, 392.00, 493.88, 220.00, 261.63, 329.63, 392.00, 174.61, 220.00, 261.63, 349.23, 196.00, 246.94, 293.66, 392.00];
       const bgmToggleBtn = document.getElementById('bgmToggleBtn');
       const soundToggleBtn = document.getElementById('soundToggleBtn');
 
@@ -322,20 +333,35 @@
         if (!soundEnabled) return;
         const ctx = getAC(); if (!ctx) return;
         try {
-          const n = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
-          o.connect(g); g.connect(ctx.destination);
-          if (type === 'rotate') {
-            o.type = 'sine'; o.frequency.setValueAtTime(520, n); o.frequency.exponentialRampToValueAtTime(760, n + 0.06);
-            g.gain.setValueAtTime(0.06, n); g.gain.exponentialRampToValueAtTime(0.001, n + 0.07); o.start(n); o.stop(n + 0.08);
+          const n = ctx.currentTime;
+          if (type === 'move') {
+            const o = ctx.createOscillator(), g = ctx.createGain();
+            o.type = 'sine'; o.frequency.setValueAtTime(420, n); o.frequency.exponentialRampToValueAtTime(580, n + 0.035);
+            g.gain.setValueAtTime(0.07, n); g.gain.exponentialRampToValueAtTime(0.001, n + 0.045);
+            o.connect(g); g.connect(ctx.destination); o.start(n); o.stop(n + 0.05);
+          } else if (type === 'rotate') {
+            const o = ctx.createOscillator(), g = ctx.createGain();
+            o.type = 'sine'; o.frequency.setValueAtTime(540, n); o.frequency.exponentialRampToValueAtTime(1040, n + 0.065);
+            g.gain.setValueAtTime(0.11, n); g.gain.exponentialRampToValueAtTime(0.001, n + 0.08);
+            o.connect(g); g.connect(ctx.destination); o.start(n); o.stop(n + 0.085);
           } else if (type === 'drop') {
-            o.type = 'triangle'; o.frequency.setValueAtTime(220, n); o.frequency.exponentialRampToValueAtTime(90, n + 0.08);
-            g.gain.setValueAtTime(0.09, n); g.gain.exponentialRampToValueAtTime(0.001, n + 0.09); o.start(n); o.stop(n + 0.1);
+            const o = ctx.createOscillator(), g = ctx.createGain();
+            o.type = 'triangle'; o.frequency.setValueAtTime(320, n); o.frequency.exponentialRampToValueAtTime(65, n + 0.09);
+            g.gain.setValueAtTime(0.16, n); g.gain.exponentialRampToValueAtTime(0.001, n + 0.11);
+            o.connect(g); g.connect(ctx.destination); o.start(n); o.stop(n + 0.12);
           } else if (type === 'clear') {
-            o.type = 'sine'; o.frequency.setValueAtTime(660, n); o.frequency.setValueAtTime(990, n + 0.07);
-            g.gain.setValueAtTime(0.11, n); g.gain.exponentialRampToValueAtTime(0.001, n + 0.22); o.start(n); o.stop(n + 0.24);
+            [659.25, 880, 1046.5, 1318.5].forEach((freq, idx) => {
+              const o = ctx.createOscillator(), g = ctx.createGain();
+              const st = n + idx * 0.045;
+              o.type = 'sine'; o.frequency.setValueAtTime(freq, st);
+              g.gain.setValueAtTime(0.13, st); g.gain.exponentialRampToValueAtTime(0.001, st + 0.18);
+              o.connect(g); g.connect(ctx.destination); o.start(st); o.stop(st + 0.20);
+            });
           } else {
-            o.type = 'square'; o.frequency.setValueAtTime(340, n);
-            g.gain.setValueAtTime(0.03, n); g.gain.exponentialRampToValueAtTime(0.001, n + 0.04); o.start(n); o.stop(n + 0.05);
+            const o = ctx.createOscillator(), g = ctx.createGain();
+            o.type = 'sine'; o.frequency.setValueAtTime(380, n); o.frequency.exponentialRampToValueAtTime(160, n + 0.25);
+            g.gain.setValueAtTime(0.10, n); g.gain.exponentialRampToValueAtTime(0.001, n + 0.28);
+            o.connect(g); g.connect(ctx.destination); o.start(n); o.stop(n + 0.30);
           }
         } catch {}
       }
@@ -351,11 +377,14 @@
           if (!bgmEnabled || !audioCtx) return;
           try {
             const n = audioCtx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
-            o.type = 'sawtooth'; o.frequency.setValueAtTime(bgmNotes[bgmStep++ % bgmNotes.length], n);
-            g.gain.setValueAtTime(0.025, n); g.gain.exponentialRampToValueAtTime(0.0001, n + 0.16);
-            o.connect(g); g.connect(audioCtx.destination); o.start(n); o.stop(n + 0.18);
+            o.type = 'sine';
+            o.frequency.setValueAtTime(bgmNotes[bgmStep++ % bgmNotes.length], n);
+            g.gain.setValueAtTime(0.001, n);
+            g.gain.linearRampToValueAtTime(0.022, n + 0.05);
+            g.gain.exponentialRampToValueAtTime(0.0001, n + 0.38);
+            o.connect(g); g.connect(audioCtx.destination); o.start(n); o.stop(n + 0.40);
           } catch {}
-        }, 200);
+        }, 360);
       }
       function startBGM() {
         stopBGM();
@@ -365,7 +394,7 @@
             if (!bgmAudio) {
               bgmAudio = new Audio('./bgm.mp3');
               bgmAudio.loop = true;
-              bgmAudio.volume = 0.45;
+              bgmAudio.volume = 0.25;
               bgmAudio.addEventListener('error', () => {
                 bgmFileFailed = true;
                 if (bgmEnabled && !gameOver && !bgmTimer) startSynthBGM();
@@ -881,13 +910,13 @@
       vipSlowBtn.addEventListener('click', activateVipSlow);
 
       const SHAPES = [
-        { shape: [[1,1,1,1]], color: 'bg-cyan-400 shadow-cyan-500/50' },
-        { shape: [[2,0,0],[2,2,2]], color: 'bg-blue-500 shadow-blue-500/50' },
-        { shape: [[0,0,3],[3,3,3]], color: 'bg-orange-500 shadow-orange-500/50' },
-        { shape: [[4,4],[4,4]], color: 'bg-yellow-400 shadow-yellow-500/50' },
-        { shape: [[0,5,5],[5,5,0]], color: 'bg-emerald-500 shadow-emerald-500/50' },
-        { shape: [[0,6,0],[6,6,6]], color: 'bg-purple-500 shadow-purple-500/50' },
-        { shape: [[7,7,0],[0,7,7]], color: 'bg-rose-500 shadow-rose-500/50' }
+        { shape: [[1,1,1,1]], color: 'neon-blk neon-cyan' },
+        { shape: [[2,0,0],[2,2,2]], color: 'neon-blk neon-blue' },
+        { shape: [[0,0,3],[3,3,3]], color: 'neon-blk neon-orange' },
+        { shape: [[4,4],[4,4]], color: 'neon-blk neon-yellow' },
+        { shape: [[0,5,5],[5,5,0]], color: 'neon-blk neon-emerald' },
+        { shape: [[0,6,0],[6,6,6]], color: 'neon-blk neon-purple' },
+        { shape: [[7,7,0],[0,7,7]], color: 'neon-blk neon-rose' }
       ];
 
       let currentPiece = null;
@@ -1141,11 +1170,11 @@
         }
         if (e.key === 'ArrowLeft') {
           currentPiece.col--;
-          if (checkCollision()) currentPiece.col++;
+          if (checkCollision()) currentPiece.col++; else playSfx('move');
           render();
         } else if (e.key === 'ArrowRight') {
           currentPiece.col++;
-          if (checkCollision()) currentPiece.col--;
+          if (checkCollision()) currentPiece.col--; else playSfx('move');
           render();
         } else if (e.key === 'ArrowDown') {
           moveDown();
