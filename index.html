@@ -64,6 +64,7 @@
       </div>
 
       <div class="flex items-center gap-1.5 shrink-0">
+        <button id="bgmToggleBtn" type="button" title="배경음악 켜기/끄기" class="px-2 py-1 rounded-lg text-xs bg-indigo-950/80 border border-indigo-700/50 text-slate-200 cursor-pointer">🎵</button>
         <div class="px-2 py-1 rounded-lg text-[11px] font-extrabold bg-sky-500/15 border border-sky-500/40 text-sky-300">
           최고 <span id="bestScoreHeader">0</span>
         </div>
@@ -158,13 +159,13 @@
         </div>
       </div>
 
-      <!-- 모바일 터치 컨트롤러 (첫 화면 하단에 바로 보이도록 콤팩트 배치) -->
-      <div class="grid grid-cols-5 gap-1.5 sm:hidden w-full max-w-[320px]">
-        <button id="btnLeft" type="button" class="touch-btn py-3 bg-slate-800 active:bg-slate-700 border border-slate-700 rounded-xl font-black text-base shadow">◀</button>
-        <button id="btnDown" type="button" class="touch-btn py-3 bg-slate-800 active:bg-slate-700 border border-slate-700 rounded-xl font-black text-base shadow">▼</button>
-        <button id="btnRotate" type="button" class="touch-btn py-3 bg-indigo-900/90 active:bg-indigo-800 border border-indigo-700 rounded-xl font-black text-base shadow">🔄</button>
-        <button id="btnRight" type="button" class="touch-btn py-3 bg-slate-800 active:bg-slate-700 border border-slate-700 rounded-xl font-black text-base shadow">▶</button>
-        <button id="btnDrop" type="button" class="touch-btn py-3 bg-amber-500 active:bg-amber-400 text-slate-950 rounded-xl font-black text-xs shadow">⚡낙하</button>
+      <!-- 하단 조작 버튼 (모바일·PC 공용) -->
+      <div class="grid grid-cols-5 gap-1.5 sm:gap-2 w-full max-w-[320px] sm:max-w-[440px]">
+        <button id="btnLeft" type="button" class="touch-btn py-3 bg-slate-800 hover:bg-slate-700/80 active:bg-slate-700 border border-slate-700 rounded-xl font-black text-base shadow cursor-pointer">◀</button>
+        <button id="btnDown" type="button" class="touch-btn py-3 bg-slate-800 hover:bg-slate-700/80 active:bg-slate-700 border border-slate-700 rounded-xl font-black text-base shadow cursor-pointer">▼</button>
+        <button id="btnRight" type="button" class="touch-btn py-3 bg-slate-800 hover:bg-slate-700/80 active:bg-slate-700 border border-slate-700 rounded-xl font-black text-base shadow cursor-pointer">▶</button>
+        <button id="btnRotate" type="button" class="touch-btn py-3 bg-indigo-900/90 hover:bg-indigo-800/90 active:bg-indigo-800 border border-indigo-700 rounded-xl font-black text-base shadow cursor-pointer">🔄</button>
+        <button id="btnDrop" type="button" class="touch-btn py-3 bg-amber-500 hover:bg-amber-400 active:bg-amber-400 text-slate-950 rounded-xl font-black text-xs shadow cursor-pointer">⚡낙하</button>
       </div>
     </section>
 
@@ -196,27 +197,11 @@
     </section>
 
     <!-- ========================================== -->
-    <!-- 3. Android 바탕화면 바로가기 아이콘 만들기 카드 -->
+    <!-- 3. 바로가기 설치 카드 (오토바이 게임 동일 디자인) -->
     <!-- ========================================== -->
-    <section class="w-full bg-gradient-to-br from-slate-900 via-slate-900 to-amber-950/30 border border-amber-500/35 rounded-2xl p-4 shadow-xl mb-6">
-      <div class="flex items-center gap-3.5">
-        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl border-2 border-amber-400/80 shadow-lg shadow-amber-500/25 bg-gradient-to-br from-amber-400 via-orange-500 to-amber-700 flex items-center justify-center shrink-0 text-2xl sm:text-3xl">
-          🧱
-        </div>
-        <div class="flex-1 min-w-0">
-          <div class="text-xs sm:text-sm font-extrabold text-amber-300 mb-1.5">
-            📱 안드로이드 바탕화면 바로가기 (Android Chrome)
-          </div>
-          <button id="androidInstallBtn" type="button"
-            class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-b from-amber-300 via-amber-400 to-amber-600 hover:from-yellow-200 hover:to-amber-500 active:scale-[0.98] text-slate-950 font-black text-xs sm:text-sm border border-yellow-200/80 shadow-lg shadow-amber-500/25 transition flex items-center justify-center gap-1.5 cursor-pointer">
-            <span>🧱</span>
-            <span id="androidInstallBtnText">아이콘 만들기</span>
-          </button>
-          <p id="androidInstallHint" class="text-[11px] text-slate-400 mt-1.5">
-            버튼을 누르면 스마트폰 바탕화면에 케트리스 아이콘이 설치됩니다.
-          </p>
-        </div>
-      </div>
+    <section class="w-full bg-gradient-to-r from-slate-900 to-orange-950/20 border border-orange-500/30 rounded-xl p-3 flex justify-between items-center mb-3">
+      <div class="flex items-center gap-2"><span class="text-lg">🧱</span><span class="text-xs font-black text-orange-300">바로가기 설치</span></div>
+      <button id="androidInstallBtn" type="button" class="px-3 py-2 rounded-lg bg-orange-500 text-slate-950 text-xs font-black cursor-pointer"><span id="androidInstallBtnText">설치</span></button>
     </section>
   </main>
 
@@ -278,46 +263,87 @@
   <script>
     (() => {
       // ==========================================
-      // 0. PWA 설치 & Service Worker 등록
+      // 0. 바로가기 설치 & 배경음악 (./bgm.mp3)
       // ==========================================
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js').catch(() => {});
       }
 
-      let deferredInstallPrompt = null;
-      const installBtn = document.getElementById('androidInstallBtn');
-      const installBtnText = document.getElementById('androidInstallBtnText');
-      const installHint = document.getElementById('androidInstallHint');
+      let deferred = null;
+      window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; });
+      document.getElementById('androidInstallBtn').onclick = async () => {
+        if (deferred) { deferred.prompt(); await deferred.userChoice; deferred = null; document.getElementById('androidInstallBtnText').textContent = '완료'; return; }
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob(['[InternetShortcut]\r\nURL=' + location.href + '\r\n'], { type: 'text/plain' }));
+        a.download = '케트리스.url'; a.click();
+        document.getElementById('androidInstallBtnText').textContent = '완료';
+      };
 
-      if (window.matchMedia('(display-mode: standalone)').matches) {
-        installBtnText.textContent = '바탕화면 아이콘 설치 완료됨';
-        installBtn.disabled = true;
-        installBtn.className = 'w-full py-2.5 px-4 rounded-xl bg-slate-800 text-slate-400 font-bold text-xs sm:text-sm border border-slate-700 cursor-default flex items-center justify-center gap-1.5';
+      const BGM_KEY = 'ketris_bgm_enabled_v1';
+      let bgmEnabled = (() => { try { return localStorage.getItem(BGM_KEY) !== 'false'; } catch { return true; } })();
+      let audioCtx = null, bgmTimer = null, bgmStep = 0, bgmAudio = null, bgmFileFailed = false;
+      const bgmNotes = [196, 247, 294, 392, 349, 294, 247, 220];
+      const bgmToggleBtn = document.getElementById('bgmToggleBtn');
+
+      function updateBgmBtn() {
+        bgmToggleBtn.textContent = bgmEnabled ? '🎵' : '🔇';
       }
-
-      window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredInstallPrompt = e;
-        installBtnText.textContent = '아이콘 만들기 (지금 설치 가능)';
-        installHint.textContent = '준비 완료! 버튼을 누르면 바탕화면에 앱 아이콘이 생성됩니다.';
-        installHint.className = 'text-[11px] text-emerald-400 font-semibold mt-1.5';
-      });
-
-      window.addEventListener('appinstalled', () => {
-        deferredInstallPrompt = null;
-        installBtnText.textContent = '바탕화면 아이콘 생성 완료!';
-        showToast('📲 스마트폰 바탕화면에 [케트리스] 아이콘이 생성되었습니다!');
-      });
-
-      installBtn.addEventListener('click', async () => {
-        if (deferredInstallPrompt) {
-          deferredInstallPrompt.prompt();
-          await deferredInstallPrompt.userChoice;
-          deferredInstallPrompt = null;
-        } else {
-          showToast('⚠️ Chrome 브라우저 우측 상단 [⋮] 메뉴 → [홈 화면에 추가]를 눌러주세요.');
+      function getAC() {
+        if (!audioCtx) { const C = window.AudioContext || window.webkitAudioContext; if (C) audioCtx = new C(); }
+        if (audioCtx?.state === 'suspended') audioCtx.resume().catch(() => {});
+        return audioCtx;
+      }
+      function startSynthBGM() {
+        const ctx = getAC(); if (!ctx) return;
+        bgmStep = 0;
+        bgmTimer = setInterval(() => {
+          if (!bgmEnabled || !audioCtx) return;
+          try {
+            const n = audioCtx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
+            o.type = 'sawtooth'; o.frequency.setValueAtTime(bgmNotes[bgmStep++ % bgmNotes.length], n);
+            g.gain.setValueAtTime(0.025, n); g.gain.exponentialRampToValueAtTime(0.0001, n + 0.16);
+            o.connect(g); g.connect(audioCtx.destination); o.start(n); o.stop(n + 0.18);
+          } catch {}
+        }, 200);
+      }
+      function startBGM() {
+        stopBGM();
+        if (!bgmEnabled) return;
+        if (!bgmFileFailed) {
+          try {
+            if (!bgmAudio) {
+              bgmAudio = new Audio('./bgm.mp3');
+              bgmAudio.loop = true;
+              bgmAudio.volume = 0.45;
+              bgmAudio.addEventListener('error', () => {
+                bgmFileFailed = true;
+                if (bgmEnabled && !gameOver && !bgmTimer) startSynthBGM();
+              });
+            }
+            bgmAudio.currentTime = 0;
+            const p = bgmAudio.play();
+            if (p && typeof p.catch === 'function') {
+              p.catch(() => {
+                if (bgmEnabled && !bgmTimer) startSynthBGM();
+              });
+            }
+            return;
+          } catch { bgmFileFailed = true; }
         }
+        startSynthBGM();
+      }
+      function stopBGM() {
+        if (bgmTimer) { clearInterval(bgmTimer); bgmTimer = null; }
+        if (bgmAudio) { try { bgmAudio.pause(); } catch {} }
+      }
+      bgmToggleBtn.addEventListener('click', () => {
+        bgmEnabled = !bgmEnabled;
+        try { localStorage.setItem(BGM_KEY, String(bgmEnabled)); } catch {}
+        updateBgmBtn();
+        if (bgmEnabled && !gameOver && currentPiece) startBGM();
+        else stopBGM();
       });
+      updateBgmBtn();
 
       // ==========================================
       // 1. 클라우드 통합 서버 연결 & 계정 관리
@@ -754,6 +780,7 @@
 
         if (gameInterval) clearInterval(gameInterval);
         gameInterval = setInterval(moveDown, dropInterval);
+        if (bgmEnabled) startBGM();
         render();
       }
 
@@ -860,6 +887,7 @@
       function endGame() {
         gameOver = true;
         clearInterval(gameInterval);
+        stopBGM();
         overlayTitle.textContent = '게임 오버!';
         overlayDesc.innerHTML = `최종 점수: <strong class="text-amber-300">${score.toLocaleString('ko-KR')}점</strong><br/>최고 기록: ${bestScore.toLocaleString('ko-KR')}점`;
         startBtn.textContent = '다시 시작';
