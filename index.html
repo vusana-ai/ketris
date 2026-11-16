@@ -106,7 +106,7 @@
     <!-- ========================================== -->
     <section class="w-full flex flex-col items-center justify-center gap-2">
 
-      <!-- 모바일 상단 콤팩트 상태 바 (폰 화면에서 한눈에 보이도록 배치) -->
+      <!-- 모바일 상단 콤팩트 상태 바 -->
       <div class="flex sm:hidden w-full max-w-[320px] items-center justify-between bg-slate-900/95 border border-slate-800 rounded-xl px-3 py-1.5 shadow">
         <div>
           <div class="text-[9px] font-bold text-slate-400">SCORE</div>
@@ -179,7 +179,7 @@
         <button id="btnDrop" type="button" class="touch-btn py-3 bg-amber-500 hover:bg-amber-400 active:bg-amber-400 text-slate-950 rounded-xl font-black text-xs shadow cursor-pointer">⚡낙하</button>
       </div>
 
-      <!-- 가장 아래 VIP 3초 슬로우 버튼 -->
+      <!-- 하단 VIP 3초 슬로우 버튼 -->
       <button id="vipSlowBtn" type="button" class="touch-btn w-full max-w-[320px] sm:max-w-[440px] py-2.5 px-4 rounded-xl bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 hover:from-fuchsia-500 hover:to-indigo-500 active:scale-[0.98] text-white font-black text-xs sm:text-sm border border-amber-300/70 shadow-lg shadow-purple-500/25 transition flex items-center justify-center gap-1.5 cursor-pointer">
         <span>👑</span>
         <span id="vipSlowBtnLabel">VIP · 3초간 매우 천천히 진행 🔒</span>
@@ -196,7 +196,6 @@
             <span>🏆</span>
             <span>케트리스 명예의 전당 (실시간 랭킹)</span>
           </h2>
-          <p class="text-[11px] text-slate-400 mt-0.5">용사 키우기와 동일한 통합 계정으로 점수가 자동 등록됩니다</p>
         </div>
         <button id="refreshRankingBtn" type="button" class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 transition active:scale-95 cursor-pointer shrink-0">
           🔄 새로고침
@@ -214,7 +213,7 @@
     </section>
 
     <!-- ========================================== -->
-    <!-- 3. 바로가기 설치 카드 (오토바이 게임 동일 디자인) -->
+    <!-- 3. 바로가기 설치 카드 (수정 완료) -->
     <!-- ========================================== -->
     <section class="w-full bg-gradient-to-r from-slate-900 to-orange-950/20 border border-orange-500/30 rounded-xl p-3 flex justify-between items-center mb-3">
       <div class="flex items-center gap-2"><span class="text-lg">🧱</span><span class="text-xs font-black text-orange-300">바로가기 설치</span></div>
@@ -298,7 +297,7 @@
   <script>
     (() => {
       // ==========================================
-      // 0. 바로가기 설치 & 배경음악 (./bgm.mp3)
+      // 0. 바로가기 설치 (수정: 모바일 맞춤 가이드 토스트 제공) & 배경음악
       // ==========================================
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js').catch(() => {});
@@ -306,12 +305,28 @@
 
       let deferred = null;
       window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; });
+
       document.getElementById('androidInstallBtn').onclick = async () => {
-        if (deferred) { deferred.prompt(); await deferred.userChoice; deferred = null; document.getElementById('androidInstallBtnText').textContent = '완료'; return; }
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob(['[InternetShortcut]\r\nURL=' + location.href + '\r\n'], { type: 'text/plain' }));
-        a.download = '케트리스.url'; a.click();
-        document.getElementById('androidInstallBtnText').textContent = '완료';
+        if (deferred) {
+          deferred.prompt();
+          const choiceResult = await deferred.userChoice;
+          if (choiceResult.outcome === 'accepted') {
+            showToast('✨ 홈 화면에 바로가기가 설치되었습니다!');
+          }
+          deferred = null;
+          document.getElementById('androidInstallBtnText').textContent = '완료';
+          return;
+        }
+
+        // 모바일/PC 브라우저별 안내 메시지 (바로가기 설치 지원)
+        const ua = navigator.userAgent || navigator.vendor || window.opera;
+        if (/android/i.test(ua)) {
+          showToast("📌 브라우저 우측 상단 메뉴(⋮)에서 [홈 화면에 추가]를 선택하세요!");
+        } else if (/iPad|iPhone|iPod/.test(ua) && !window.MSStream) {
+          showToast("📌 하단 공유 버튼(📤)을 누른 후 [홈 화면에 추가]를 선택하세요!");
+        } else {
+          showToast("📌 브라우저 메뉴 또는 주소창 우측의 [설치 아이콘]을 눌러주세요!");
+        }
       };
 
       const BGM_KEY = 'ketris_bgm_enabled_v1';
@@ -416,20 +431,23 @@
         if (bgmTimer) { clearInterval(bgmTimer); bgmTimer = null; }
         if (bgmAudio) { try { bgmAudio.pause(); } catch {} }
       }
+
       bgmToggleBtn.addEventListener('click', () => {
         bgmEnabled = !bgmEnabled;
         try { localStorage.setItem(BGM_KEY, String(bgmEnabled)); } catch {}
-        soundToggleBtn.addEventListener('click', () => {
+        updateBgmBtn();
+        if (bgmEnabled && !gameOver && currentPiece) startBGM();
+        else stopBGM();
+      });
+
+      soundToggleBtn.addEventListener('click', () => {
         soundEnabled = !soundEnabled;
         try { localStorage.setItem(SFX_KEY, String(soundEnabled)); } catch {}
         updateSoundBtn();
       });
+
       updateBgmBtn();
       updateSoundBtn();
-        if (bgmEnabled && !gameOver && currentPiece) startBGM();
-        else stopBGM();
-      });
-      updateBgmBtn();
 
       // ==========================================
       // 1. 클라우드 통합 서버 연결 & 계정 관리
@@ -439,7 +457,6 @@
       const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
       const API_BASE_URL = isLocalHost ? '' : CLOUD_API_URL;
 
-      // 용사 키우기와 동일한 토큰 키 공유 -> 한 번 로그인하면 자동 연동
       const TOKEN_KEY = 'hero_clicker_jwt_token';
       const USER_KEY = 'hero_clicker_username';
       const LOCAL_BEST_KEY = 'ketris_local_best_v1';
@@ -460,7 +477,6 @@
         if (m) return `${m[1]}-****-${m[3]}`;
         return str.replace(/(01[016789])[-.\s]?(\d{3,4})[-.\s]?(\d{4})/g, '$1-****-$3');
       }
-
 
       let toastTimeout = null;
       function showToast(message) {
@@ -786,7 +802,7 @@
       document.getElementById('refreshRankingBtn').addEventListener('click', () => fetchAndRenderRanking(true));
 
       // ==========================================
-      // 2. 케트리스 핵심 게임 엔진 (모바일/PC 공용)
+      // 2. 케트리스 핵심 게임 엔진 (벽 밀어내기 회전 수정 완료)
       // ==========================================
       const ROWS = 20;
       const COLS = 10;
@@ -827,6 +843,7 @@
         vipModal.classList.add('hidden');
         vipModal.classList.remove('flex');
       });
+
       async function initToss() {
         if (tossInited || typeof TossPayments === 'undefined') return;
         tossInited = true;
@@ -1048,7 +1065,6 @@
           score += cleared * 100 * cleared;
           updateScoreDisplays();
 
-          // 10줄마다 속도 소폭 상승
           const newInterval = Math.max(150, 500 - Math.floor(lines / 10) * 35);
           if (newInterval !== dropInterval) {
             dropInterval = newInterval;
@@ -1060,8 +1076,11 @@
         }
       }
 
+      // [수정 완료] 가장 오른쪽 벽에 붙어 있을 때 회전 시 자동으로 밀어내는 Wall Kick 기능 추가
       function rotatePiece() {
         const originalShape = currentPiece.shape;
+        const originalCol = currentPiece.col;
+        const originalRow = currentPiece.row;
         const rows = originalShape.length;
         const cols = originalShape[0].length;
         const rotated = Array(cols).fill(null).map(() => Array(rows).fill(0));
@@ -1073,9 +1092,27 @@
         }
 
         currentPiece.shape = rotated;
-        if (checkCollision()) {
+
+        // 벽에 막힐 경우 왼쪽/오른쪽으로 살짝 이동시키며 회전 가능한 위치 탐색 (Wall Kick)
+        const kickTests = [0, -1, 1, -2, 2];
+        let success = false;
+
+        for (let k of kickTests) {
+          currentPiece.col = originalCol + k;
+          if (!checkCollision()) {
+            success = true;
+            break;
+          }
+        }
+
+        if (success) {
+          playSfx('rotate');
+        } else {
+          // 회전 불가 시 원래 상태로 복원
           currentPiece.shape = originalShape;
-        } else { playSfx('rotate'); }
+          currentPiece.col = originalCol;
+          currentPiece.row = originalRow;
+        }
         render();
       }
 
@@ -1105,7 +1142,6 @@
         startBtn.textContent = '다시 시작';
         overlayEl.classList.remove('hidden');
 
-        // 로그인 상태면 최고 점수 자동 클라우드 반영
         saveScoreToServer(score, lines, false);
       }
 
@@ -1161,7 +1197,6 @@
         renderNextPreview('mnext');
       }
 
-      // 키보드 조작 (모달이 열려 있을 때는 무시)
       document.addEventListener('keydown', (e) => {
         if (!authModal.classList.contains('hidden') || !vipModal.classList.contains('hidden')) return;
         if (gameOver || !currentPiece) return;
@@ -1185,7 +1220,6 @@
         }
       });
 
-      // 모바일 터치 버튼 조작
       document.getElementById('btnLeft').addEventListener('click', () => {
         if (gameOver || !currentPiece) return;
         currentPiece.col--;
@@ -1213,7 +1247,6 @@
 
       startBtn.addEventListener('click', startGame);
 
-      // 초기 로드
       initGrids();
       updateAuthHeaderUI();
       if (authToken) {
