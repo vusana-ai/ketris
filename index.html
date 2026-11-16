@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#0f172a" />
   <link rel="icon" type="image/png" href="./icon.png" />
+  <link rel="apple-touch-icon" href="./icon.png" />
   <link rel="manifest" href="./manifest.json" />
   <title>케트리스 — 블록 퍼즐 아케이드</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
@@ -72,24 +73,14 @@
         <button id="vipOpenBtn" type="button" class="vip-btn-glow px-2 py-0.5 rounded-md text-[10px] font-black bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white border border-amber-300/70 cursor-pointer shrink-0">👑 <span id="vipHeaderBtnLabel">VIP</span></button>
       </div>
 
-      <div class="flex items-center gap-1.5 shrink-0">
-        <button id="bgmToggleBtn" type="button" title="배경음악 켜기/끄기" class="px-2 py-1 rounded-lg text-xs bg-indigo-950/80 border border-indigo-700/50 text-slate-200 cursor-pointer">🎵</button>
-        <div class="px-2 py-1 rounded-lg text-[11px] font-extrabold bg-sky-500/15 border border-sky-500/40 text-sky-300">
-          최고 <span id="bestScoreHeader">0</span>
-        </div>
-
-        <!-- 골드바 서버저장/로그인 버튼 -->
+      <div class="flex items-center gap-1 shrink-0 flex-wrap justify-end">
+        <button id="bgmToggleBtn" type="button" class="px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-semibold bg-indigo-950/80 border border-indigo-700/50 text-indigo-200 cursor-pointer whitespace-nowrap">🎵 배경음 ON</button>
+        <button id="soundToggleBtn" type="button" class="px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-semibold bg-slate-800 border border-slate-700 text-slate-200 cursor-pointer whitespace-nowrap">🔊 효과음 ON</button>
         <button id="serverSaveGoldBtn" type="button"
-          class="px-2.5 py-1 rounded-lg text-xs font-black bg-gradient-to-b from-amber-300 via-amber-400 to-amber-600 hover:from-yellow-200 hover:to-amber-500 text-slate-950 border border-yellow-200/80 shadow-md shadow-amber-500/20 transition active:scale-95 flex items-center gap-1 cursor-pointer">
-          <svg class="w-3.5 h-3.5 shrink-0 gold-bar-glow" viewBox="0 0 24 24" fill="none">
-            <path d="M5.5 7.5L8.5 5H15.5L18.5 7.5L21 17.5H3L5.5 7.5Z" fill="#78350F" stroke="#451A03" stroke-width="1.4" stroke-linejoin="round"/>
-            <path d="M8.5 5H15.5L17 9.5H7L8.5 5Z" fill="#FEF08A"/>
-            <path d="M7 9.5H17L19.2 16.5H4.8L7 9.5Z" fill="#F59E0B"/>
-          </svg>
-          <span id="serverSaveBtnLabel">서버연동</span>
+          class="px-2.5 py-1 rounded-lg text-[11px] font-black bg-gradient-to-b from-amber-300 via-amber-400 to-amber-600 hover:from-yellow-200 hover:to-amber-500 text-slate-950 border border-yellow-200/80 shadow-md transition active:scale-95 cursor-pointer whitespace-nowrap">
+          <span id="serverSaveBtnLabel">로그인</span>
         </button>
-
-        <button id="logoutBtn" type="button" class="hidden px-2 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 transition cursor-pointer">
+        <button id="logoutBtn" type="button" class="hidden px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 transition cursor-pointer whitespace-nowrap">
           로그아웃
         </button>
       </div>
@@ -235,7 +226,7 @@
         <button id="vipCloseBtn" type="button" class="cursor-pointer text-slate-400 hover:text-slate-200 px-2 py-1 font-bold">✕</button>
       </div>
       <ul class="text-xs text-slate-300 space-y-1.5 mb-3">
-        <li>⏳ 케트리스 하단 <strong>VIP 3초 슬로우</strong> 버튼 해금 (전체 게임 3초간 매우 천천히 진행)</li>
+        <li>⏳ 케트리스 하단 <strong>VIP 3초 슬로우</strong> 버튼 해금 (판당 3회 · 3초간 매우 천천히 진행)</li>
         <li>👑 통합 계정 전 게임 VIP 혜택 동시 적용</li>
       </ul>
       <div id="tossWidgetLoading" class="text-xs text-center text-slate-500 py-3">결제 로딩...</div>
@@ -313,13 +304,40 @@
       };
 
       const BGM_KEY = 'ketris_bgm_enabled_v1';
+      const SFX_KEY = 'ketris_sfx_enabled_v1';
       let bgmEnabled = (() => { try { return localStorage.getItem(BGM_KEY) !== 'false'; } catch { return true; } })();
+      let soundEnabled = (() => { try { return localStorage.getItem(SFX_KEY) !== 'false'; } catch { return true; } })();
       let audioCtx = null, bgmTimer = null, bgmStep = 0, bgmAudio = null, bgmFileFailed = false;
       const bgmNotes = [196, 247, 294, 392, 349, 294, 247, 220];
       const bgmToggleBtn = document.getElementById('bgmToggleBtn');
+      const soundToggleBtn = document.getElementById('soundToggleBtn');
 
       function updateBgmBtn() {
-        bgmToggleBtn.textContent = bgmEnabled ? '🎵' : '🔇';
+        bgmToggleBtn.textContent = bgmEnabled ? '🎵 배경음 ON' : '🔇 배경음 OFF';
+      }
+      function updateSoundBtn() {
+        soundToggleBtn.textContent = soundEnabled ? '🔊 효과음 ON' : '🔇 효과음 OFF';
+      }
+      function playSfx(type) {
+        if (!soundEnabled) return;
+        const ctx = getAC(); if (!ctx) return;
+        try {
+          const n = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
+          o.connect(g); g.connect(ctx.destination);
+          if (type === 'rotate') {
+            o.type = 'sine'; o.frequency.setValueAtTime(520, n); o.frequency.exponentialRampToValueAtTime(760, n + 0.06);
+            g.gain.setValueAtTime(0.06, n); g.gain.exponentialRampToValueAtTime(0.001, n + 0.07); o.start(n); o.stop(n + 0.08);
+          } else if (type === 'drop') {
+            o.type = 'triangle'; o.frequency.setValueAtTime(220, n); o.frequency.exponentialRampToValueAtTime(90, n + 0.08);
+            g.gain.setValueAtTime(0.09, n); g.gain.exponentialRampToValueAtTime(0.001, n + 0.09); o.start(n); o.stop(n + 0.1);
+          } else if (type === 'clear') {
+            o.type = 'sine'; o.frequency.setValueAtTime(660, n); o.frequency.setValueAtTime(990, n + 0.07);
+            g.gain.setValueAtTime(0.11, n); g.gain.exponentialRampToValueAtTime(0.001, n + 0.22); o.start(n); o.stop(n + 0.24);
+          } else {
+            o.type = 'square'; o.frequency.setValueAtTime(340, n);
+            g.gain.setValueAtTime(0.03, n); g.gain.exponentialRampToValueAtTime(0.001, n + 0.04); o.start(n); o.stop(n + 0.05);
+          }
+        } catch {}
       }
       function getAC() {
         if (!audioCtx) { const C = window.AudioContext || window.webkitAudioContext; if (C) audioCtx = new C(); }
@@ -372,7 +390,13 @@
       bgmToggleBtn.addEventListener('click', () => {
         bgmEnabled = !bgmEnabled;
         try { localStorage.setItem(BGM_KEY, String(bgmEnabled)); } catch {}
-        updateBgmBtn();
+        soundToggleBtn.addEventListener('click', () => {
+        soundEnabled = !soundEnabled;
+        try { localStorage.setItem(SFX_KEY, String(soundEnabled)); } catch {}
+        updateSoundBtn();
+      });
+      updateBgmBtn();
+      updateSoundBtn();
         if (bgmEnabled && !gameOver && currentPiece) startBGM();
         else stopBGM();
       });
@@ -408,7 +432,6 @@
         return str.replace(/(01[016789])[-.\s]?(\d{3,4})[-.\s]?(\d{4})/g, '$1-****-$3');
       }
 
-      document.getElementById('bestScoreHeader').textContent = bestScore.toLocaleString('ko-KR');
 
       let toastTimeout = null;
       function showToast(message) {
@@ -426,7 +449,7 @@
 
       function updateAuthHeaderUI() {
         const userBadge = document.getElementById('userBadge');
-        const saveBtnLabel = document.getElementById('serverSaveBtnLabel');
+        const loginBtn = document.getElementById('serverSaveGoldBtn');
         const logoutBtn = document.getElementById('logoutBtn');
 
         document.getElementById('vipHeaderBtnLabel').textContent = isVip ? 'VIP중' : 'VIP';
@@ -434,12 +457,12 @@
         if (authToken && currentUsername) {
           userBadge.textContent = `📱 ${maskPhoneMiddle(currentUsername)}${isVip ? ' 👑' : ''}`;
           userBadge.className = 'px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 truncate';
-          saveBtnLabel.textContent = '점수저장';
+          loginBtn.classList.add('hidden');
           logoutBtn.classList.remove('hidden');
         } else {
           userBadge.textContent = '👤 게스트';
           userBadge.className = 'px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold bg-slate-800 border border-slate-700 text-slate-300 truncate';
-          saveBtnLabel.textContent = '서버연동';
+          loginBtn.classList.remove('hidden');
           logoutBtn.classList.add('hidden');
         }
       }
@@ -472,7 +495,6 @@
             if (serverBest > bestScore) {
               bestScore = serverBest;
               localStorage.setItem(LOCAL_BEST_KEY, String(bestScore));
-              document.getElementById('bestScoreHeader').textContent = bestScore.toLocaleString('ko-KR');
             }
             if (data.saveData?.bestLines) bestLines = data.saveData.bestLines;
             if (data.isVip || data.saveData?.isVip) {
@@ -488,7 +510,6 @@
         if (currentScore > bestScore) {
           bestScore = currentScore;
           localStorage.setItem(LOCAL_BEST_KEY, String(bestScore));
-          document.getElementById('bestScoreHeader').textContent = bestScore.toLocaleString('ko-KR');
         }
         if (currentLines > bestLines) {
           bestLines = currentLines;
@@ -553,7 +574,7 @@
           } else if (authToken) {
             myRankDetail.textContent = '게임을 플레이하면 순위에 자동 등록됩니다';
           } else {
-            myRankDetail.textContent = '상단 [서버연동] 로그인 시 랭킹에 등록됩니다';
+            myRankDetail.textContent = '상단 [로그인] 시 랭킹에 자동 등록됩니다';
           }
 
           listContainer.innerHTML = '';
@@ -717,7 +738,6 @@
           if (serverBest > bestScore) {
             bestScore = serverBest;
             localStorage.setItem(LOCAL_BEST_KEY, String(bestScore));
-            document.getElementById('bestScoreHeader').textContent = bestScore.toLocaleString('ko-KR');
           } else if (currentBest > serverBest) {
             await saveScoreToServer(currentBest, bestLines, false);
           }
@@ -761,6 +781,7 @@
       let dropInterval = 500;
       let slowUntil = 0;
       let slowTickTimer = null;
+      let slowUsesLeft = 3;
       const SLOW_DROP_MS = 1600;
       const vipModal = document.getElementById('vipModal');
       const vipSlowBtn = document.getElementById('vipSlowBtn');
@@ -801,13 +822,16 @@
         if (!vipSlowBtn || !vipSlowBtnLabel) return;
         if (isSlowActive()) {
           const rem = Math.max(0.1, (slowUntil - Date.now()) / 1000).toFixed(1);
-          vipSlowBtnLabel.textContent = `⏳ 3초 슬로우 적용 중 (${rem}초)`;
+          vipSlowBtnLabel.textContent = `⏳ 3초 슬로우 적용 중 (${rem}초 · 남은 ${slowUsesLeft}회)`;
           vipSlowBtn.className = 'touch-btn w-full max-w-[320px] sm:max-w-[440px] py-2.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-sky-600 text-slate-950 font-black text-xs sm:text-sm border-2 border-white shadow-lg shadow-cyan-500/35 transition flex items-center justify-center gap-1.5 cursor-pointer';
-        } else if (isVip) {
-          vipSlowBtnLabel.textContent = 'VIP · 3초간 매우 천천히 진행';
+        } else if (isVip && slowUsesLeft > 0) {
+          vipSlowBtnLabel.textContent = `VIP · 3초간 매우 천천히 진행 (${slowUsesLeft}/3회)`;
           vipSlowBtn.className = 'touch-btn w-full max-w-[320px] sm:max-w-[440px] py-2.5 px-4 rounded-xl bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 hover:from-fuchsia-500 hover:to-indigo-500 active:scale-[0.98] text-white font-black text-xs sm:text-sm border border-amber-300/70 shadow-lg shadow-purple-500/25 transition flex items-center justify-center gap-1.5 cursor-pointer';
+        } else if (isVip) {
+          vipSlowBtnLabel.textContent = 'VIP · 3초 슬로우 사용 완료 (0/3회)';
+          vipSlowBtn.className = 'touch-btn w-full max-w-[320px] sm:max-w-[440px] py-2.5 px-4 rounded-xl bg-slate-800/80 text-slate-400 font-black text-xs sm:text-sm border border-slate-700 transition flex items-center justify-center gap-1.5 cursor-not-allowed';
         } else {
-          vipSlowBtnLabel.textContent = 'VIP · 3초간 매우 천천히 진행 🔒';
+          vipSlowBtnLabel.textContent = 'VIP · 3초간 매우 천천히 진행 (3회) 🔒';
           vipSlowBtn.className = 'touch-btn w-full max-w-[320px] sm:max-w-[440px] py-2.5 px-4 rounded-xl bg-slate-900/90 hover:bg-slate-800 active:scale-[0.98] text-purple-200 font-black text-xs sm:text-sm border border-purple-500/50 shadow-lg transition flex items-center justify-center gap-1.5 cursor-pointer';
         }
       }
@@ -830,6 +854,11 @@
           return;
         }
         if (isSlowActive()) return;
+        if (slowUsesLeft <= 0) {
+          showToast('⏳ 이번 판 VIP 3초 슬로우(3회)를 모두 사용했습니다!');
+          return;
+        }
+        slowUsesLeft--;
         slowUntil = Date.now() + 3000;
         clearInterval(gameInterval);
         gameInterval = setInterval(moveDown, SLOW_DROP_MS);
@@ -875,7 +904,6 @@
         if (score > bestScore) {
           bestScore = score;
           localStorage.setItem(LOCAL_BEST_KEY, String(bestScore));
-          document.getElementById('bestScoreHeader').textContent = bestScore.toLocaleString('ko-KR');
         }
       }
 
@@ -919,6 +947,7 @@
         score = 0;
         lines = 0;
         dropInterval = 500;
+        slowUsesLeft = 3;
         stopSlowEffect();
         gameOver = false;
         updateScoreDisplays();
@@ -985,6 +1014,7 @@
           }
         }
         if (cleared > 0) {
+          playSfx('clear');
           lines += cleared;
           score += cleared * 100 * cleared;
           updateScoreDisplays();
@@ -1016,7 +1046,7 @@
         currentPiece.shape = rotated;
         if (checkCollision()) {
           currentPiece.shape = originalShape;
-        }
+        } else { playSfx('rotate'); }
         render();
       }
 
@@ -1025,6 +1055,7 @@
           currentPiece.row++;
         }
         currentPiece.row--;
+        playSfx('drop');
         mergePiece();
         clearLines();
         currentPiece = nextPiece;
