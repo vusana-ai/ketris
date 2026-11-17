@@ -19,79 +19,173 @@
       user-select: none;
       -webkit-tap-highlight-color: transparent;
       overscroll-behavior: none;
+      -webkit-font-smoothing: antialiased;
     }
     :root {
-      --cell-size: clamp(20px, 2.75vh, 27px);
-      --preview-size: 13px;
+      --cell-size: 22px;
+      --preview-size: 15px;
     }
     @media (min-width: 640px) {
       :root {
-        --cell-size: 27px;
+        --cell-size: 28px;
         --preview-size: 20px;
       }
+    }
+    /* 전체화면(집중 모드) 레이아웃 */
+    body.focus-fullscreen {
+      overflow: hidden;
+      height: 100dvh;
+    }
+    body.focus-fullscreen #topHeader,
+    body.focus-fullscreen #rankingSection,
+    body.focus-fullscreen #installSection {
+      display: none !important;
+    }
+    body.focus-fullscreen main {
+      height: 100dvh;
+      max-width: 100%;
+      padding: 6px;
+      justify-content: center;
+    }
+
+    /* 보드 격자: 선명한 크리스탈 그리드 */
+    #board {
+      background: radial-gradient(circle at 50% 40%, rgba(15, 23, 42, 0.9), rgba(2, 6, 23, 0.98));
     }
     .board-cell {
       width: var(--cell-size);
       height: var(--cell-size);
-      border: 1px solid rgba(56, 189, 248, 0.08);
-      transition: transform 0.06s ease;
+      box-sizing: border-box;
+      border: 1px solid rgba(56, 189, 248, 0.09);
+      transition: transform 0.05s ease;
     }
-    .neon-blk { position: relative; border-radius: 4px !important; z-index: 2; }
-    .neon-cyan { background: linear-gradient(135deg, rgba(0,255,255,0.88), rgba(0,180,255,0.45)); border: 2px solid #b8ffff !important; box-shadow: inset 0 0 10px #ffffff, inset 2px 2px 4px rgba(255,255,255,0.95), 0 0 14px #00f5ff, 0 0 24px rgba(0,245,255,0.7); }
-    .neon-blue { background: linear-gradient(135deg, rgba(70,155,255,0.90), rgba(30,90,255,0.48)); border: 2px solid #cfe2ff !important; box-shadow: inset 0 0 10px #ffffff, inset 2px 2px 4px rgba(255,255,255,0.95), 0 0 14px #3b82f6, 0 0 24px rgba(59,130,246,0.75); }
-    .neon-orange { background: linear-gradient(135deg, rgba(255,165,30,0.92), rgba(255,95,0,0.48)); border: 2px solid #ffe4b5 !important; box-shadow: inset 0 0 10px #fff3d6, inset 2px 2px 4px rgba(255,255,255,0.95), 0 0 14px #ff8c00, 0 0 24px rgba(255,140,0,0.75); }
-    .neon-yellow { background: linear-gradient(135deg, rgba(255,245,40,0.92), rgba(235,180,0,0.48)); border: 2px solid #ffffcc !important; box-shadow: inset 0 0 10px #ffffff, inset 2px 2px 4px rgba(255,255,255,0.95), 0 0 14px #ffee00, 0 0 24px rgba(255,238,0,0.78); }
-    .neon-emerald { background: linear-gradient(135deg, rgba(0,255,145,0.90), rgba(0,190,95,0.45)); border: 2px solid #c4ffe0 !important; box-shadow: inset 0 0 10px #ffffff, inset 2px 2px 4px rgba(255,255,255,0.95), 0 0 14px #00ff88, 0 0 24px rgba(0,255,136,0.75); }
-    .neon-purple { background: linear-gradient(135deg, rgba(255,60,255,0.90), rgba(185,20,255,0.48)); border: 2px solid #ffd1ff !important; box-shadow: inset 0 0 10px #ffffff, inset 2px 2px 4px rgba(255,255,255,0.95), 0 0 14px #ff2aff, 0 0 24px rgba(255,42,255,0.78); }
-    .neon-rose { background: linear-gradient(135deg, rgba(255,55,115,0.92), rgba(220,20,75,0.48)); border: 2px solid #ffc7d9 !important; box-shadow: inset 0 0 10px #ffffff, inset 2px 2px 4px rgba(255,255,255,0.95), 0 0 14px #ff2a6d, 0 0 24px rgba(255,42,109,0.75); }
-    @keyframes linePop { 0% { filter: brightness(2.2); transform: scale(1.06); } 100% { filter: brightness(1); transform: scale(1); } }
-    .line-pop { animation: linePop 0.25s ease-out; }
     .preview-cell {
       width: var(--preview-size);
       height: var(--preview-size);
+      box-sizing: border-box;
       border: 1px solid rgba(255, 255, 255, 0.05);
     }
+
+    /* ==================================================== */
+    /* 고선명 크리스탈 형광(네온) 블록 그래픽 스타일           */
+    /* ==================================================== */
+    .neon-blk {
+      position: relative;
+      border-radius: 4px !important;
+      z-index: 5;
+      transform: translateZ(0); /* 모바일 GPU 가속으로 픽셀 깨짐 방지 */
+      backface-visibility: hidden;
+    }
+    /* 블록 상단 유리 반사광 (반짝이는 입체 하이글로시 효과) */
+    .neon-blk::after {
+      content: '';
+      position: absolute;
+      top: 1.5px;
+      left: 2px;
+      right: 2px;
+      height: 32%;
+      border-radius: 2px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.78) 0%, rgba(255, 255, 255, 0.05) 100%);
+      pointer-events: none;
+    }
+
+    .neon-cyan {
+      background: linear-gradient(135deg, #22d3ee 0%, #0891b2 65%, #0e7490 100%);
+      border: 1.5px solid #cffafe !important;
+      box-shadow:
+        inset 0 0 5px rgba(255, 255, 255, 0.9),
+        0 0 8px rgba(0, 245, 255, 0.95),
+        0 0 16px rgba(6, 182, 212, 0.65) !important;
+    }
+    .neon-blue {
+      background: linear-gradient(135deg, #60a5fa 0%, #2563eb 65%, #1d4ed8 100%);
+      border: 1.5px solid #dbeafe !important;
+      box-shadow:
+        inset 0 0 5px rgba(255, 255, 255, 0.9),
+        0 0 8px rgba(59, 130, 246, 0.95),
+        0 0 16px rgba(37, 99, 235, 0.65) !important;
+    }
+    .neon-orange {
+      background: linear-gradient(135deg, #fb923c 0%, #ea580c 65%, #c2410c 100%);
+      border: 1.5px solid #ffedd5 !important;
+      box-shadow:
+        inset 0 0 5px rgba(255, 255, 255, 0.9),
+        0 0 8px rgba(255, 140, 0, 0.95),
+        0 0 16px rgba(249, 115, 22, 0.65) !important;
+    }
+    .neon-yellow {
+      background: linear-gradient(135deg, #fde047 0%, #eab308 65%, #ca8a04 100%);
+      border: 1.5px solid #fef9c3 !important;
+      box-shadow:
+        inset 0 0 5px rgba(255, 255, 255, 0.95),
+        0 0 9px rgba(250, 204, 21, 0.95),
+        0 0 18px rgba(234, 179, 8, 0.65) !important;
+    }
+    .neon-emerald {
+      background: linear-gradient(135deg, #34d399 0%, #059669 65%, #047857 100%);
+      border: 1.5px solid #d1fae5 !important;
+      box-shadow:
+        inset 0 0 5px rgba(255, 255, 255, 0.9),
+        0 0 8px rgba(16, 185, 129, 0.95),
+        0 0 16px rgba(5, 150, 105, 0.65) !important;
+    }
+    .neon-purple {
+      background: linear-gradient(135deg, #e879f9 0%, #a855f7 60%, #7e22ce 100%);
+      border: 1.5px solid #fae8ff !important;
+      box-shadow:
+        inset 0 0 5px rgba(255, 255, 255, 0.9),
+        0 0 9px rgba(217, 70, 239, 0.95),
+        0 0 18px rgba(168, 85, 247, 0.7) !important;
+    }
+    .neon-rose {
+      background: linear-gradient(135deg, #fb7185 0%, #e11d48 65%, #be123c 100%);
+      border: 1.5px solid #ffe4e6 !important;
+      box-shadow:
+        inset 0 0 5px rgba(255, 255, 255, 0.9),
+        0 0 8px rgba(244, 63, 94, 0.95),
+        0 0 16px rgba(225, 29, 72, 0.65) !important;
+    }
+
+    @keyframes linePop {
+      0% { filter: brightness(2.3); transform: scale(1.06); }
+      100% { filter: brightness(1); transform: scale(1); }
+    }
+    .line-pop { animation: linePop 0.25s ease-out; }
+
     .touch-btn {
       touch-action: manipulation;
-    }
-    @keyframes goldShine {
-      0%, 100% { filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.45)); }
-      50% { filter: drop-shadow(0 0 10px rgba(253, 224, 71, 0.85)); }
-    }
-    .gold-bar-glow {
-      animation: goldShine 2.4s infinite ease-in-out;
     }
     .vip-btn-glow {
       animation: vp 2.2s infinite ease-in-out;
     }
     @keyframes vp {
       0%, 100% { box-shadow: 0 0 8px rgba(168, 85, 247, 0.45); }
-      50% { box-shadow: 0 0 15px rgba(232, 121, 249, 0.8); }
+      50% { box-shadow: 0 0 15px rgba(232, 121, 249, 0.85); }
     }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
 
-  <!-- 상단 통합 계정 & 점수 저장 헤더 -->
-  <header class="border-b border-slate-800/80 bg-slate-900/95 backdrop-blur px-3 py-2 sticky top-0 z-30 shadow-lg shadow-black/25">
-    <div class="max-w-3xl mx-auto flex items-center justify-between gap-2">
+  <!-- 상단 통합 계정 & 점수 저장 헤더 (전체화면 시 자동 숨김) -->
+  <header id="topHeader" class="border-b border-slate-800/80 bg-slate-900/95 backdrop-blur px-2.5 py-2 sticky top-0 z-30 shadow-lg shadow-black/25">
+    <div class="max-w-3xl mx-auto flex items-center justify-between gap-1.5">
       <div class="flex items-center gap-1.5 min-w-0">
-        <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 font-black text-sm border border-amber-500/40 shrink-0">🧱</span>
-        <h1 class="text-sm sm:text-base font-black tracking-tight text-amber-400 shrink-0">케트리스</h1>
-        <span id="userBadge" class="px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold bg-slate-800 border border-slate-700 text-slate-300 truncate">
+        <span class="inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-amber-500/20 text-amber-400 font-black text-xs sm:text-sm border border-amber-500/40 shrink-0">🧱</span>
+        <h1 class="text-xs sm:text-base font-black tracking-tight text-amber-400 shrink-0">케트리스</h1>
+        <span id="userBadge" class="px-1.5 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold bg-slate-800 border border-slate-700 text-slate-300 truncate max-w-[90px] sm:max-w-none">
           👤 게스트
         </span>
         <button id="vipOpenBtn" type="button" class="vip-btn-glow px-2 py-0.5 rounded-md text-[10px] font-black bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white border border-amber-300/70 cursor-pointer shrink-0">👑 <span id="vipHeaderBtnLabel">VIP</span></button>
       </div>
 
-      <div class="flex items-center gap-1 shrink-0 flex-wrap justify-end">
+      <div class="flex items-center gap-1 shrink-0">
         <button id="bgmToggleBtn" type="button" class="px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-semibold bg-indigo-950/80 border border-indigo-700/50 text-indigo-200 cursor-pointer whitespace-nowrap">🎵 배경음 ON</button>
         <button id="soundToggleBtn" type="button" class="px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-semibold bg-slate-800 border border-slate-700 text-slate-200 cursor-pointer whitespace-nowrap">🔊 효과음 ON</button>
         <button id="serverSaveGoldBtn" type="button"
-          class="px-2.5 py-1 rounded-lg text-[11px] font-black bg-gradient-to-b from-amber-300 via-amber-400 to-amber-600 hover:from-yellow-200 hover:to-amber-500 text-slate-950 border border-yellow-200/80 shadow-md transition active:scale-95 cursor-pointer whitespace-nowrap">
+          class="px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-black bg-gradient-to-b from-amber-300 via-amber-400 to-amber-600 hover:from-yellow-200 hover:to-amber-500 text-slate-950 border border-yellow-200/80 shadow-md transition active:scale-95 cursor-pointer whitespace-nowrap">
           <span id="serverSaveBtnLabel">로그인</span>
         </button>
-        <button id="logoutBtn" type="button" class="hidden px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 transition cursor-pointer whitespace-nowrap">
+        <button id="logoutBtn" type="button" class="hidden px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 transition cursor-pointer whitespace-nowrap">
           로그아웃
         </button>
       </div>
@@ -99,69 +193,63 @@
   </header>
 
   <!-- 메인 컨테이너 -->
-  <main class="flex-1 max-w-3xl w-full mx-auto px-3 py-2 sm:py-5 flex flex-col items-center gap-3">
+  <main class="flex-1 max-w-3xl w-full mx-auto px-2 py-2 sm:py-5 flex flex-col items-center gap-3">
 
     <!-- ========================================== -->
-    <!-- 1. 첫 화면 게임 플레이 영역 (모바일 1뷰포트 맞춤) -->
+    <!-- 1. 게임 플레이 집중 영역 (전체화면 시 이 영역만 표시됨) -->
     <!-- ========================================== -->
-    <section class="w-full flex flex-col items-center justify-center gap-2">
+    <section id="gamePlaySection" class="w-full flex flex-col items-center justify-center gap-2 sm:gap-2.5">
 
-      <!-- 모바일 상단 콤팩트 상태 바 -->
-      <div class="flex sm:hidden w-full max-w-[320px] items-center justify-between bg-slate-900/95 border border-slate-800 rounded-xl px-3 py-1.5 shadow">
-        <div>
-          <div class="text-[9px] font-bold text-slate-400">SCORE</div>
-          <div id="mobileScoreVal" class="text-base font-black text-amber-400 leading-tight">0</div>
-        </div>
-        <div class="text-center">
-          <div class="text-[9px] font-bold text-slate-400">LINES</div>
-          <div id="mobileLinesVal" class="text-base font-black text-emerald-400 leading-tight">0</div>
-        </div>
-        <div class="flex items-center gap-1.5">
-          <span class="text-[9px] font-bold text-slate-400">NEXT</span>
-          <div class="bg-slate-950 border border-slate-800 rounded-md p-1">
-            <div id="mobileNextBoard" class="grid grid-cols-4 grid-rows-4"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 게임 보드 + 데스크톱 사이드 패널 -->
-      <div class="flex flex-col sm:flex-row gap-5 bg-slate-900/90 border border-slate-800 p-2.5 sm:p-5 rounded-2xl shadow-2xl items-center">
-        <!-- 10x20 테트리스 보드 -->
-        <div class="relative bg-slate-950 border-2 border-slate-700 rounded-xl overflow-hidden shadow-inner">
-          <div id="board" class="grid grid-cols-10 grid-rows-20"></div>
+      <!-- 게임 보드 + 우측 사이드 패널 (모바일·PC 동일하게 가로 배치) -->
+      <div class="flex flex-row gap-2.5 sm:gap-5 bg-slate-900/95 border border-slate-800 p-2.5 sm:p-5 rounded-2xl shadow-2xl items-stretch">
+        
+        <!-- 왼쪽: 10x20 테트리스 보드 (네온 빛이 잘리지 않도록 p-1 여유공간 부여) -->
+        <div class="relative bg-slate-950 border-2 border-slate-700/90 rounded-xl p-0.5 shadow-[inset_0_0_20px_rgba(0,0,0,0.9)] shrink-0 self-center">
+          <div id="board" class="grid grid-cols-10 grid-rows-20 rounded-lg"></div>
 
           <!-- 시작 / 게임오버 오버레이 -->
-          <div id="overlay" class="absolute inset-0 bg-slate-950/85 backdrop-blur-sm flex flex-col items-center justify-center gap-2.5 p-4 text-center z-10">
+          <div id="overlay" class="absolute inset-0 bg-slate-950/85 backdrop-blur-sm rounded-xl flex flex-col items-center justify-center gap-2.5 p-3 text-center z-20">
             <div class="text-2xl">🧱</div>
-            <h2 id="overlayTitle" class="text-lg sm:text-xl font-black text-amber-300">케트리스</h2>
-            <p id="overlayDesc" class="text-xs text-slate-300 leading-relaxed">블록을 쌓아 줄을 지우고<br/>명예의 전당 1위에 도전하세요!</p>
-            <button id="startBtn" type="button" class="mt-1 px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-sm shadow-lg shadow-amber-500/30 transition active:scale-95 cursor-pointer">
+            <h2 id="overlayTitle" class="text-base sm:text-xl font-black text-amber-300">케트리스</h2>
+            <p id="overlayDesc" class="text-[11px] sm:text-xs text-slate-300 leading-relaxed">블록을 쌓아 줄을 지우고<br/>명예의 전당 1위에 도전하세요!</p>
+            <button id="startBtn" type="button" class="mt-1 px-5 py-2 sm:px-6 sm:py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-xs sm:text-sm shadow-lg shadow-amber-500/30 transition active:scale-95 cursor-pointer">
               게임 시작
             </button>
           </div>
         </div>
 
-        <!-- 데스크톱 전용 우측 정보 패널 -->
-        <div class="hidden sm:flex flex-col justify-between w-44 gap-4">
-          <div class="bg-slate-950/85 border border-slate-800 rounded-xl p-4 flex flex-col gap-3">
-            <div>
-              <span class="text-[11px] font-bold text-slate-400">점수 (SCORE)</span>
-              <div id="scoreVal" class="text-2xl font-black text-amber-400">0</div>
-            </div>
-            <div>
-              <span class="text-[11px] font-bold text-slate-400">지운 줄 (LINES)</span>
-              <div id="linesVal" class="text-xl font-black text-emerald-400">0</div>
-            </div>
-            <div>
-              <span class="text-[11px] font-bold text-slate-400">다음 블록 (NEXT)</span>
-              <div class="mt-1.5 bg-slate-900 border border-slate-800 rounded-lg p-2 flex justify-center">
-                <div id="nextBoard" class="grid grid-cols-4 grid-rows-4"></div>
+        <!-- 오른쪽: 상단 빈자리 [전체화면 버튼] + 스코어/라인/NEXT 패널 + 조작 안내 -->
+        <div class="flex flex-col justify-between w-[114px] sm:w-44 gap-2 sm:gap-3">
+          
+          <div class="flex flex-col gap-2 sm:gap-3">
+            <!-- 우측 상단 빈자리: 전체화면 집중모드 버튼 -->
+            <button id="fullscreenBtn" type="button" class="w-full py-2 px-2 rounded-xl text-[11px] sm:text-xs font-black bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 active:scale-95 text-white border border-sky-300/60 shadow-lg shadow-sky-500/25 flex items-center justify-center gap-1 cursor-pointer transition">
+              <span>⛶</span>
+              <span id="fullscreenBtnLabel">전체화면 보기</span>
+            </button>
+
+            <!-- 점수 (SCORE) / 지운 줄 (LINES) / 다음 블록 (NEXT) 카드 -->
+            <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-2.5 sm:p-4 flex flex-col gap-2.5 sm:gap-3 shadow-inner">
+              <div>
+                <span class="text-[10px] sm:text-[11px] font-bold text-slate-400 block">점수 (SCORE)</span>
+                <div id="scoreVal" class="text-lg sm:text-2xl font-black text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.35)] leading-tight mt-0.5">0</div>
+              </div>
+              <div>
+                <span class="text-[10px] sm:text-[11px] font-bold text-slate-400 block">지운 줄 (LINES)</span>
+                <div id="linesVal" class="text-base sm:text-xl font-black text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.35)] leading-tight mt-0.5">0</div>
+              </div>
+              <div>
+                <span class="text-[10px] sm:text-[11px] font-bold text-slate-400 block">다음 블록 (NEXT)</span>
+                <div class="mt-1.5 bg-slate-900/95 border border-slate-800 rounded-lg p-2 flex justify-center items-center">
+                  <div id="nextBoard" class="grid grid-cols-4 grid-rows-4"></div>
+                </div>
               </div>
             </div>
           </div>
 
-          <div class="text-[11px] text-slate-400 bg-slate-950/60 border border-slate-800 rounded-xl p-3 leading-relaxed">
-            <div class="font-bold text-slate-200 mb-1">⌨️ 키보드 조작</div>
+          <!-- 하단 키보드 조작 안내 박스 -->
+          <div class="text-[9px] sm:text-[11px] text-slate-400 bg-slate-950/60 border border-slate-800 rounded-xl p-2 sm:p-3 leading-relaxed">
+            <div class="font-bold text-slate-200 mb-0.5 sm:mb-1">⌨️ 키보드 조작</div>
             <div>← → : 좌우 이동</div>
             <div>↑ : 블록 회전</div>
             <div>↓ : 빠르게 내리기</div>
@@ -171,25 +259,25 @@
       </div>
 
       <!-- 하단 조작 버튼 (모바일·PC 공용) -->
-      <div class="grid grid-cols-5 gap-1.5 sm:gap-2 w-full max-w-[320px] sm:max-w-[440px]">
-        <button id="btnLeft" type="button" class="touch-btn py-3 bg-slate-800 hover:bg-slate-700/80 active:bg-slate-700 border border-slate-700 rounded-xl font-black text-base shadow cursor-pointer">◀</button>
-        <button id="btnDown" type="button" class="touch-btn py-3 bg-slate-800 hover:bg-slate-700/80 active:bg-slate-700 border border-slate-700 rounded-xl font-black text-base shadow cursor-pointer">▼</button>
-        <button id="btnRight" type="button" class="touch-btn py-3 bg-slate-800 hover:bg-slate-700/80 active:bg-slate-700 border border-slate-700 rounded-xl font-black text-base shadow cursor-pointer">▶</button>
-        <button id="btnRotate" type="button" class="touch-btn py-3 bg-indigo-900/90 hover:bg-indigo-800/90 active:bg-indigo-800 border border-indigo-700 rounded-xl font-black text-base shadow cursor-pointer">🔄</button>
-        <button id="btnDrop" type="button" class="touch-btn py-3 bg-amber-500 hover:bg-amber-400 active:bg-amber-400 text-slate-950 rounded-xl font-black text-xs shadow cursor-pointer">⚡낙하</button>
+      <div class="grid grid-cols-5 gap-1.5 sm:gap-2 w-full max-w-[345px] sm:max-w-[465px]">
+        <button id="btnLeft" type="button" class="touch-btn py-2.5 sm:py-3 bg-slate-800 hover:bg-slate-700/80 active:bg-slate-700 border border-slate-700 rounded-xl font-black text-base shadow cursor-pointer">◀</button>
+        <button id="btnDown" type="button" class="touch-btn py-2.5 sm:py-3 bg-slate-800 hover:bg-slate-700/80 active:bg-slate-700 border border-slate-700 rounded-xl font-black text-base shadow cursor-pointer">▼</button>
+        <button id="btnRight" type="button" class="touch-btn py-2.5 sm:py-3 bg-slate-800 hover:bg-slate-700/80 active:bg-slate-700 border border-slate-700 rounded-xl font-black text-base shadow cursor-pointer">▶</button>
+        <button id="btnRotate" type="button" class="touch-btn py-2.5 sm:py-3 bg-indigo-900/90 hover:bg-indigo-800/90 active:bg-indigo-800 border border-indigo-700 rounded-xl font-black text-base shadow cursor-pointer">🔄</button>
+        <button id="btnDrop" type="button" class="touch-btn py-2.5 sm:py-3 bg-amber-500 hover:bg-amber-400 active:bg-amber-400 text-slate-950 rounded-xl font-black text-xs shadow cursor-pointer">⚡낙하</button>
       </div>
 
       <!-- 하단 VIP 3초 슬로우 버튼 -->
-      <button id="vipSlowBtn" type="button" class="touch-btn w-full max-w-[320px] sm:max-w-[440px] py-2.5 px-4 rounded-xl bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 hover:from-fuchsia-500 hover:to-indigo-500 active:scale-[0.98] text-white font-black text-xs sm:text-sm border border-amber-300/70 shadow-lg shadow-purple-500/25 transition flex items-center justify-center gap-1.5 cursor-pointer">
+      <button id="vipSlowBtn" type="button" class="touch-btn w-full max-w-[345px] sm:max-w-[465px] py-2.5 px-4 rounded-xl bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 hover:from-fuchsia-500 hover:to-indigo-500 active:scale-[0.98] text-white font-black text-xs sm:text-sm border border-amber-300/70 shadow-lg shadow-purple-500/25 transition flex items-center justify-center gap-1.5 cursor-pointer">
         <span>👑</span>
-        <span id="vipSlowBtnLabel">VIP · 3초간 매우 천천히 진행 🔒</span>
+        <span id="vipSlowBtnLabel">VIP · 3초간 매우 천천히 진행 (3회) 🔒</span>
       </button>
     </section>
 
     <!-- ========================================== -->
-    <!-- 2. 케트리스 실시간 랭킹 (명예의 전당) 섹션 -->
+    <!-- 2. 케트리스 실시간 랭킹 섹션 (전체화면 시 자동 숨김) -->
     <!-- ========================================== -->
-    <section class="w-full bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl mt-2">
+    <section id="rankingSection" class="w-full bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl mt-2">
       <div class="flex items-center justify-between gap-2 mb-3">
         <div>
           <h2 class="text-sm sm:text-base font-black text-amber-300 flex items-center gap-1.5">
@@ -213,9 +301,9 @@
     </section>
 
     <!-- ========================================== -->
-    <!-- 3. 바로가기 설치 카드 (수정 완료) -->
+    <!-- 3. 바로가기 설치 카드 (전체화면 시 자동 숨김) -->
     <!-- ========================================== -->
-    <section class="w-full bg-gradient-to-r from-slate-900 to-orange-950/20 border border-orange-500/30 rounded-xl p-3 flex justify-between items-center mb-3">
+    <section id="installSection" class="w-full bg-gradient-to-r from-slate-900 to-orange-950/20 border border-orange-500/30 rounded-xl p-3 flex justify-between items-center mb-3">
       <div class="flex items-center gap-2"><span class="text-lg">🧱</span><span class="text-xs font-black text-orange-300">바로가기 설치</span></div>
       <button id="androidInstallBtn" type="button" class="px-3 py-2 rounded-lg bg-orange-500 text-slate-950 text-xs font-black cursor-pointer"><span id="androidInstallBtnText">설치</span></button>
     </section>
@@ -297,8 +385,81 @@
   <script>
     (() => {
       // ==========================================
-      // 0. 바로가기 설치 (수정: 모바일 맞춤 가이드 토스트 제공) & 배경음악
+      // 0. 픽셀 깨짐 방지용 정수(Integer) 셀 크기 계산 & 전체화면 모드
       // ==========================================
+      const fullscreenBtn = document.getElementById('fullscreenBtn');
+      const fullscreenBtnLabel = document.getElementById('fullscreenBtnLabel');
+      let isFocusFullscreen = false;
+
+      // 소수점 픽셀로 인해 모바일에서 그래픽이 흐릿해지는 현상을 막기 위해 정수로 딱 떨어지게 계산
+      function updateCrispCellSize() {
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        let cellPx, prevPx;
+
+        if (isFocusFullscreen) {
+          const maxW = Math.floor((vw - 150) / 10);
+          const maxH = Math.floor((vh - 145) / 20);
+          cellPx = Math.max(20, Math.min(34, maxW, maxH));
+          prevPx = Math.max(15, Math.min(22, Math.floor(cellPx * 0.68)));
+        } else if (vw >= 640) {
+          cellPx = 28;
+          prevPx = 20;
+        } else {
+          const maxW = Math.floor((vw - 150) / 10);
+          const maxH = Math.floor((vh - 200) / 20);
+          cellPx = Math.max(20, Math.min(25, maxW, maxH));
+          prevPx = Math.max(14, Math.min(18, Math.floor(cellPx * 0.68)));
+        }
+
+        document.documentElement.style.setProperty('--cell-size', `${cellPx}px`);
+        document.documentElement.style.setProperty('--preview-size', `${prevPx}px`);
+      }
+
+      window.addEventListener('resize', updateCrispCellSize);
+
+      function applyFocusFullscreenUI(active) {
+        isFocusFullscreen = active;
+        if (active) {
+          document.body.classList.add('focus-fullscreen');
+          fullscreenBtnLabel.textContent = '전체화면 종료';
+        } else {
+          document.body.classList.remove('focus-fullscreen');
+          fullscreenBtnLabel.textContent = '전체화면 보기';
+        }
+        updateCrispCellSize();
+      }
+
+      fullscreenBtn.addEventListener('click', async () => {
+        if (!isFocusFullscreen) {
+          applyFocusFullscreenUI(true);
+          if (document.documentElement.requestFullscreen) {
+            try {
+              await document.documentElement.requestFullscreen();
+            } catch (e) {}
+          }
+          window.scrollTo(0, 0);
+        } else {
+          applyFocusFullscreenUI(false);
+          if (document.fullscreenElement && document.exitFullscreen) {
+            try {
+              await document.exitFullscreen();
+            } catch (e) {}
+          }
+        }
+      });
+
+      document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement && isFocusFullscreen) {
+          applyFocusFullscreenUI(false);
+        } else {
+          updateCrispCellSize();
+        }
+      });
+
+      updateCrispCellSize();
+
+      // 바로가기 설치 & 배경음악
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js').catch(() => {});
       }
@@ -318,7 +479,6 @@
           return;
         }
 
-        // 모바일/PC 브라우저별 안내 메시지 (바로가기 설치 지원)
         const ua = navigator.userAgent || navigator.vendor || window.opera;
         if (/android/i.test(ua)) {
           showToast("📌 브라우저 우측 상단 메뉴(⋮)에서 [홈 화면에 추가]를 선택하세요!");
@@ -501,12 +661,12 @@
         updateVipSlowBtnUI();
         if (authToken && currentUsername) {
           userBadge.textContent = `📱 ${maskPhoneMiddle(currentUsername)}${isVip ? ' 👑' : ''}`;
-          userBadge.className = 'px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 truncate';
+          userBadge.className = 'px-1.5 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 truncate max-w-[90px] sm:max-w-none';
           loginBtn.classList.add('hidden');
           logoutBtn.classList.remove('hidden');
         } else {
           userBadge.textContent = '👤 게스트';
-          userBadge.className = 'px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold bg-slate-800 border border-slate-700 text-slate-300 truncate';
+          userBadge.className = 'px-1.5 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold bg-slate-800 border border-slate-700 text-slate-300 truncate max-w-[90px] sm:max-w-none';
           loginBtn.classList.remove('hidden');
           logoutBtn.classList.add('hidden');
         }
@@ -802,17 +962,14 @@
       document.getElementById('refreshRankingBtn').addEventListener('click', () => fetchAndRenderRanking(true));
 
       // ==========================================
-      // 2. 케트리스 핵심 게임 엔진 (벽 밀어내기 회전 수정 완료)
+      // 2. 케트리스 핵심 게임 엔진 (네온 그래픽 보존 렌더링)
       // ==========================================
       const ROWS = 20;
       const COLS = 10;
       const boardEl = document.getElementById('board');
       const nextBoardEl = document.getElementById('nextBoard');
-      const mobileNextBoardEl = document.getElementById('mobileNextBoard');
       const scoreValEl = document.getElementById('scoreVal');
       const linesValEl = document.getElementById('linesVal');
-      const mobileScoreValEl = document.getElementById('mobileScoreVal');
-      const mobileLinesValEl = document.getElementById('mobileLinesVal');
       const overlayEl = document.getElementById('overlay');
       const overlayTitle = document.getElementById('overlayTitle');
       const overlayDesc = document.getElementById('overlayDesc');
@@ -869,16 +1026,16 @@
         if (isSlowActive()) {
           const rem = Math.max(0.1, (slowUntil - Date.now()) / 1000).toFixed(1);
           vipSlowBtnLabel.textContent = `⏳ 3초 슬로우 적용 중 (${rem}초 · 남은 ${slowUsesLeft}회)`;
-          vipSlowBtn.className = 'touch-btn w-full max-w-[320px] sm:max-w-[440px] py-2.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-sky-600 text-slate-950 font-black text-xs sm:text-sm border-2 border-white shadow-lg shadow-cyan-500/35 transition flex items-center justify-center gap-1.5 cursor-pointer';
+          vipSlowBtn.className = 'touch-btn w-full max-w-[345px] sm:max-w-[465px] py-2.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-sky-600 text-slate-950 font-black text-xs sm:text-sm border-2 border-white shadow-lg shadow-cyan-500/35 transition flex items-center justify-center gap-1.5 cursor-pointer';
         } else if (isVip && slowUsesLeft > 0) {
           vipSlowBtnLabel.textContent = `VIP · 3초간 매우 천천히 진행 (${slowUsesLeft}/3회)`;
-          vipSlowBtn.className = 'touch-btn w-full max-w-[320px] sm:max-w-[440px] py-2.5 px-4 rounded-xl bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 hover:from-fuchsia-500 hover:to-indigo-500 active:scale-[0.98] text-white font-black text-xs sm:text-sm border border-amber-300/70 shadow-lg shadow-purple-500/25 transition flex items-center justify-center gap-1.5 cursor-pointer';
+          vipSlowBtn.className = 'touch-btn w-full max-w-[345px] sm:max-w-[465px] py-2.5 px-4 rounded-xl bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 hover:from-fuchsia-500 hover:to-indigo-500 active:scale-[0.98] text-white font-black text-xs sm:text-sm border border-amber-300/70 shadow-lg shadow-purple-500/25 transition flex items-center justify-center gap-1.5 cursor-pointer';
         } else if (isVip) {
           vipSlowBtnLabel.textContent = 'VIP · 3초 슬로우 사용 완료 (0/3회)';
-          vipSlowBtn.className = 'touch-btn w-full max-w-[320px] sm:max-w-[440px] py-2.5 px-4 rounded-xl bg-slate-800/80 text-slate-400 font-black text-xs sm:text-sm border border-slate-700 transition flex items-center justify-center gap-1.5 cursor-not-allowed';
+          vipSlowBtn.className = 'touch-btn w-full max-w-[345px] sm:max-w-[465px] py-2.5 px-4 rounded-xl bg-slate-800/80 text-slate-400 font-black text-xs sm:text-sm border border-slate-700 transition flex items-center justify-center gap-1.5 cursor-not-allowed';
         } else {
           vipSlowBtnLabel.textContent = 'VIP · 3초간 매우 천천히 진행 (3회) 🔒';
-          vipSlowBtn.className = 'touch-btn w-full max-w-[320px] sm:max-w-[440px] py-2.5 px-4 rounded-xl bg-slate-900/90 hover:bg-slate-800 active:scale-[0.98] text-purple-200 font-black text-xs sm:text-sm border border-purple-500/50 shadow-lg transition flex items-center justify-center gap-1.5 cursor-pointer';
+          vipSlowBtn.className = 'touch-btn w-full max-w-[345px] sm:max-w-[465px] py-2.5 px-4 rounded-xl bg-slate-900/90 hover:bg-slate-800 active:scale-[0.98] text-purple-200 font-black text-xs sm:text-sm border border-purple-500/50 shadow-lg transition flex items-center justify-center gap-1.5 cursor-pointer';
         }
       }
 
@@ -944,8 +1101,6 @@
         const lText = lines.toLocaleString('ko-KR');
         scoreValEl.textContent = sText;
         linesValEl.textContent = lText;
-        mobileScoreValEl.textContent = sText;
-        mobileLinesValEl.textContent = lText;
 
         if (score > bestScore) {
           bestScore = score;
@@ -958,24 +1113,21 @@
         for (let r = 0; r < ROWS; r++) {
           for (let c = 0; c < COLS; c++) {
             const cell = document.createElement('div');
-            cell.className = 'board-cell bg-slate-900/60';
+            cell.className = 'board-cell bg-slate-900/40';
             cell.id = `cell-${r}-${c}`;
             boardEl.appendChild(cell);
           }
         }
 
-        [nextBoardEl, mobileNextBoardEl].forEach((container, idx) => {
-          const prefix = idx === 0 ? 'next' : 'mnext';
-          container.innerHTML = '';
-          for (let r = 0; r < 4; r++) {
-            for (let c = 0; c < 4; c++) {
-              const cell = document.createElement('div');
-              cell.className = 'preview-cell bg-slate-900/60 rounded-sm';
-              cell.id = `${prefix}-${r}-${c}`;
-              container.appendChild(cell);
-            }
+        nextBoardEl.innerHTML = '';
+        for (let r = 0; r < 4; r++) {
+          for (let c = 0; c < 4; c++) {
+            const cell = document.createElement('div');
+            cell.className = 'preview-cell bg-slate-900/50 rounded-sm';
+            cell.id = `next-${r}-${c}`;
+            nextBoardEl.appendChild(cell);
           }
-        });
+        }
       }
 
       function getRandomPiece() {
@@ -1076,7 +1228,6 @@
         }
       }
 
-      // [수정 완료] 가장 오른쪽 벽에 붙어 있을 때 회전 시 자동으로 밀어내는 Wall Kick 기능 추가
       function rotatePiece() {
         const originalShape = currentPiece.shape;
         const originalCol = currentPiece.col;
@@ -1093,7 +1244,6 @@
 
         currentPiece.shape = rotated;
 
-        // 벽에 막힐 경우 왼쪽/오른쪽으로 살짝 이동시키며 회전 가능한 위치 탐색 (Wall Kick)
         const kickTests = [0, -1, 1, -2, 2];
         let success = false;
 
@@ -1108,7 +1258,6 @@
         if (success) {
           playSfx('rotate');
         } else {
-          // 회전 불가 시 원래 상태로 복원
           currentPiece.shape = originalShape;
           currentPiece.col = originalCol;
           currentPiece.row = originalRow;
@@ -1145,11 +1294,12 @@
         saveScoreToServer(score, lines, false);
       }
 
-      function renderNextPreview(prefix) {
+      // [핵심 개선] shadow-sm / shadow-md 제거하여 네온 형광 그림자가 지워지지 않게 보존
+      function renderNextPreview() {
         for (let r = 0; r < 4; r++) {
           for (let c = 0; c < 4; c++) {
-            const cell = document.getElementById(`${prefix}-${r}-${c}`);
-            if (cell) cell.className = 'preview-cell bg-slate-900/60 rounded-sm';
+            const cell = document.getElementById(`next-${r}-${c}`);
+            if (cell) cell.className = 'preview-cell bg-slate-900/50 rounded-sm';
           }
         }
         if (nextPiece) {
@@ -1160,8 +1310,8 @@
           for (let r = 0; r < nr; r++) {
             for (let c = 0; c < nc; c++) {
               if (nextPiece.shape[r][c]) {
-                const cell = document.getElementById(`${prefix}-${r + offsetR}-${c + offsetC}`);
-                if (cell) cell.className = `preview-cell ${nextPiece.color} rounded-sm shadow-sm`;
+                const cell = document.getElementById(`${prefix = 'next'}-${r + offsetR}-${c + offsetC}`);
+                if (cell) cell.className = `preview-cell ${nextPiece.color}`;
               }
             }
           }
@@ -1173,8 +1323,8 @@
           for (let c = 0; c < COLS; c++) {
             const cell = document.getElementById(`cell-${r}-${c}`);
             cell.className = board[r][c]
-              ? `board-cell ${board[r][c]} rounded-sm shadow-md`
-              : 'board-cell bg-slate-900/60';
+              ? `board-cell ${board[r][c]}`
+              : 'board-cell bg-slate-900/40';
           }
         }
 
@@ -1186,15 +1336,14 @@
                 const tc = currentPiece.col + c;
                 if (tr >= 0 && tr < ROWS && tc >= 0 && tc < COLS) {
                   const cell = document.getElementById(`cell-${tr}-${tc}`);
-                  cell.className = `board-cell ${currentPiece.color} rounded-sm shadow-md`;
+                  cell.className = `board-cell ${currentPiece.color}`;
                 }
               }
             }
           }
         }
 
-        renderNextPreview('next');
-        renderNextPreview('mnext');
+        renderNextPreview();
       }
 
       document.addEventListener('keydown', (e) => {
